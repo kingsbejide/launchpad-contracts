@@ -1,4 +1,5 @@
 import { Box, makeStyles, Typography, Theme, useTheme, useMediaQuery } from '@material-ui/core';
+import LinksJson from '../../../common/components/LinksJson';
 
 const useStyles = makeStyles((theme: Theme) => ({
   contentContainer: {
@@ -15,46 +16,12 @@ const BottomBanner: React.FC = () => {
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('md'));
 
-  let menuList = [
-    {
-      title: 'Products',
-      items: [
-        { title: 'Swap', url: '#' },
-        { title: 'Liquidity', url: '#' },
-        { title: 'Staking', url: '#' },
-      ],
-    },
-    {
-      title: 'Developers',
-      items: [
-        { title: 'Documentation', url: '#' },
-        { title: 'Github', url: '#' },
-      ],
-    },
-    {
-      title: 'Community',
-      items: [
-        { title: 'Twitter', url: '#' },
-        { title: 'Telegram', url: '#' },
-      ],
-    },
-    {
-      title: 'About',
-      items: [
-        { title: 'Blog', url: '#' },
-        { title: 'Guide', url: '#' },
-        { title: 'Info', url: '#' },
-        { title: 'Risk and Terms', url: '#' },
-      ],
-    },
-  ];
-
   return (
     <Box className={classes.contentContainer}>
       {matches ?
         <>
           <Box display="flex" justifyContent="center" paddingY={6}>
-            {menuList.map((value) =>
+            {LinksJson.map((value) =>
               <Box key={value.title} display="flex" flexDirection="column" paddingX={10}>
                 <Box marginBottom={1.5}>
                   <Typography variant='subtitle2'>{value.title}</Typography>
@@ -68,7 +35,7 @@ const BottomBanner: React.FC = () => {
             )}
           </Box>
           <Box display="flex" justifyContent="center" paddingY={10}>
-            <Typography variant='body2'> @ 2021 Impossible. Finance </Typography>
+            <Typography variant='body2'> @ {new Date().getFullYear()} Impossible. Finance </Typography>
           </Box>
         </> : <></>}
     </Box>

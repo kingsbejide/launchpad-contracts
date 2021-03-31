@@ -12,6 +12,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import MenuClose from '@material-ui/icons/Close';
 
 import GradientButton from '../../../common/components/GradientButton';
+import LinksJson from '../../../common/components/LinksJson';
 
 const useStyles = makeStyles((theme: Theme) => ({
   container: {
@@ -80,44 +81,11 @@ const Navigation: React.FC = () => {
     setOpen(false);
   };
 
-  let menuList = [
-    {
-      title: 'Products',
-      items: [
-        { title: 'Swap', url: '#' },
-        { title: 'Liquidity', url: '#' },
-        { title: 'Staking', url: '#' },
-      ],
-    },
-    {
-      title: 'Developers',
-      items: [
-        { title: 'Documentation', url: '#' },
-        { title: 'Github', url: '#' },
-      ],
-    },
-    {
-      title: 'Community',
-      items: [
-        { title: 'Twitter', url: '#' },
-        { title: 'Telegram', url: '#' },
-      ],
-    },
-    {
-      title: 'About',
-      items: [
-        { title: 'Blog', url: '#' },
-        { title: 'Guide', url: '#' },
-        { title: 'Info', url: '#' },
-        { title: 'Risk and Terms', url: '#' },
-      ],
-    },
-  ];
   return (
     <>
       <NavigationPage
         isOpen={isOpen}
-        menuList={menuList}
+        menuList={LinksJson}
         closeNavigation={closeNavigation}
       />
       <Box
@@ -138,7 +106,7 @@ const Navigation: React.FC = () => {
             justifyContent='space-between'
             alignItems='center'
           >
-            {menuList.map((value) => (
+            {LinksJson.map((value) => (
               <DropDownMenu
                 key={value.title}
                 title={value.title}
