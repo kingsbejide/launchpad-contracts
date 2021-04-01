@@ -64,7 +64,7 @@ Select, click, confirm, that’s it.'
                 className={classes.href}
                 align='center'
               >
-                Make your first swap
+                Make your first swap <img src='/images/Arrow.svg' />
               </Typography>
             </Box>
           </Grid>

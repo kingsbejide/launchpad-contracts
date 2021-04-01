@@ -5,6 +5,8 @@ import {
   makeStyles,
   Theme,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@material-ui/core';
 import React from 'react';
 
@@ -20,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   caption: {
     fontWeight: 800,
-    fontSize: '46px',
+    fontSize: '42px',
     color: '#A6A8AA',
     '& span': {
       color: theme.palette.text.secondary,
@@ -34,26 +36,60 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 const VisionSection: React.FC = () => {
   const classes = useStyles();
+  const theme = useTheme();
+  const matches = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const quoteWidth = matches ? 50 : 60;
+  const quoteHeight = matches ? 39 : 47;
   return (
     <Box
       className={classes.contentContainer}
       paddingTop={16}
       paddingBottom={32}
     >
-      <Container maxWidth='lg'>
+      <Container maxWidth='md'>
         <Grid container>
           <Grid item xs={12}>
             <Typography variant='h1' align='center' className={classes.title}>
               Our Vision
             </Typography>
-            <Box marginTop={4} paddingX={6}>
+            <Box marginTop={6} paddingX={6} position='relative'>
               <Typography
                 variant='h1'
                 align='center'
                 className={classes.caption}
               >
-                Level the playing field by building a <span>fair</span>, more{' '}
+                <Box
+                  display={matches ? 'flex' : 'inline-block'}
+                  position={matches ? 'initial' : 'absolute'}
+                  justifyContent='flex-start'
+                  marginLeft={matches ? 0 : `-${quoteWidth + 30}px`}
+                  marginTop={matches ? 0 : -2}
+                >
+                  <img
+                    src='/images/quote-left.png'
+                    alt='quote'
+                    width={quoteWidth}
+                    height={quoteHeight}
+                  />
+                </Box>
+                Level the playing field
+                <br /> by building a <span>fair</span>, more{' '}
                 <span>accessible</span> open financial system for all.
+                <Box
+                  display={matches ? 'flex' : 'inline-block'}
+                  position={matches ? 'initial' : 'absolute'}
+                  justifyContent='flex-end'
+                  marginLeft={5}
+                  marginTop={2}
+                >
+                  <img
+                    src='/images/quote-right.png'
+                    alt='quote'
+                    width={quoteWidth}
+                    height={quoteHeight}
+                  />
+                </Box>
               </Typography>
             </Box>
           </Grid>
