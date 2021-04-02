@@ -17,27 +17,29 @@ const BottomBanner: React.FC = () => {
   const matches = useMediaQuery(theme.breakpoints.up('md'));
 
   return (
-    <Box className={classes.contentContainer}>
-      {matches ?
-        <>
-          <Box display="flex" justifyContent="center" paddingY={6}>
-            {LinksJson.map((value) =>
-              <Box key={value.title} display="flex" flexDirection="column" paddingX={10}>
-                <Box marginBottom={1.5}>
-                  <Typography variant='subtitle2'>{value.title}</Typography>
-                </Box>
-                {value.items.map((elem) =>
-                  <Box key={elem.title} marginBottom={1.5}>
-                    <Typography variant='body1'>{elem.title}</Typography>
-                  </Box>
-                )}
+    matches ?
+      <Box className={classes.contentContainer}>
+        <Box display="flex" justifyContent="center" paddingY={6}>
+          {LinksJson.map((value) =>
+            <Box key={value.title} display="flex" flexDirection="column" paddingX={10}>
+              <Box marginBottom={1.5}>
+                <Typography variant='subtitle2'>{value.title}</Typography>
               </Box>
-            )}
-          </Box>
-          <Box display="flex" justifyContent="center" paddingY={10}>
-            <Typography variant='body2'> @ {new Date().getFullYear()} Impossible. Finance </Typography>
-          </Box>
-        </> : <></>}
+              {value.items.map((elem) =>
+                <Box key={elem.title} marginBottom={1.5}>
+                  <Typography variant='body1'>{elem.title}</Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+        <Box display="flex" justifyContent="center" paddingY={10}>
+          <Typography variant='body2'> @ {new Date().getFullYear()} Impossible. Finance </Typography>
+        </Box>
+      </Box>
+    :
+    <Box display="flex" justifyContent="center" paddingY={10}>
+      <Typography variant='body2'> @ {new Date().getFullYear()} Impossible. Finance </Typography>
     </Box>
   );
 };
