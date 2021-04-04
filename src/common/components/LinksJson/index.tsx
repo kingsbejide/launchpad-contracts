@@ -2,33 +2,25 @@ const LinksJson = [
   {
     title: 'Products',
     items: [
-      { title: 'Swap', url: '#' },
-      { title: 'Liquidity', url: '#' },
+      { title: 'Swap', url: 'https://swap.impossible.finance/#/swap' },
+      { title: 'Liquidity', url: 'https://swap.impossible.finance/#/pool' },
       { title: 'Staking', url: '#' },
     ],
   },
   {
     title: 'Developers',
-    items: [
-      { title: 'Documentation', url: '#' },
-      { title: 'Github', url: '#' },
-    ],
+    items: [{ title: 'Github', url: 'https://github.com/ImpossibleFinance' }],
   },
   {
     title: 'Community',
     items: [
-      { title: 'Twitter', url: '#' },
-      { title: 'Telegram', url: '#' },
+      { title: 'Twitter', url: 'https://twitter.com/ImpossibleFi' },
+      { title: 'Telegram', url: 'https://t.me/ImpossibleFinance' },
     ],
   },
   {
     title: 'About',
-    items: [
-      { title: 'Blog', url: '#' },
-      { title: 'Guide', url: '#' },
-      { title: 'Info', url: '#' },
-      { title: 'Risk and Terms', url: '#' },
-    ],
+    items: [{ title: 'Blog', url: 'https://medium.com/ImpossibleFinance' }],
   },
 ];
 

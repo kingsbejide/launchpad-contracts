@@ -60,7 +60,7 @@ const BannerSection: React.FC = () => {
               </Typography>
               <Typography variant='inherit' className={classes.subtitle}>
                 Impossible Finance uses decentralised financial protocols to
-                give everyone the same access to finanical products, which were
+                give everyone the same access to financial products, which were
                 previously only available to institutions and select individuals
               </Typography>
               <Box marginTop={4} />

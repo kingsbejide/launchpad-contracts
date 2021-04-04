@@ -32,7 +32,6 @@ const useStyles = makeStyles((theme: Theme) => ({
     flexDirection: 'column',
     minWidth: '200px',
     padding: '24px 16px',
-    marginTop: '8px',
     '& a:not(:last-child)': {
       marginBottom: '16px',
     },
@@ -167,7 +166,9 @@ const NavigationPage: React.FC<NavigationPageProps> = ({
             </Box>
             {value.items.map((item) => (
               <Box key={item.title} marginBottom={3}>
-                <Typography variant='body1'>{item.title}</Typography>
+                <a href={item.url}>
+                  <Typography variant='body1'>{item.title}</Typography>
+                </a>
               </Box>
             ))}
           </Box>
