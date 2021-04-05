@@ -15,6 +15,10 @@ const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: 'center',
     justifyItems: 'center',
     background: '#F2F4F5',
+    '& a': {
+      textDecoration: 'none',
+      color: `${theme.palette.text.secondary}`,
+    },
   },
 }));
 
