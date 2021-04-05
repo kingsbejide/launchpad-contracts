@@ -98,7 +98,7 @@ const theme = createMuiTheme({
   overrides: {
     MuiCssBaseline: {
       '@global': {
-        // eslint:disable-next-line
+        // @ts-expect-error
         '@font-face': [...acreFonts, ...acraMajoraFonts],
       },
     },
