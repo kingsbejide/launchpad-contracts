@@ -47,6 +47,9 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 const BannerSection: React.FC = () => {
   const classes = useStyles();
+  const navigateToSwap = () => {
+    window.open('https://swap.impossible.finance/');
+  };
   return (
     <Box className={classes.container}>
       <Navigation />
@@ -64,7 +67,10 @@ const BannerSection: React.FC = () => {
                 previously only available to institutions and select individuals
               </Typography>
               <Box marginTop={4} />
-              <GradientButton className={classes.button}>
+              <GradientButton
+                className={classes.button}
+                onClick={navigateToSwap}
+              >
                 Launch App
               </GradientButton>
             </Box>

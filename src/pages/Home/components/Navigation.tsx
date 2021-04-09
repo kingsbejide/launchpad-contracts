@@ -80,6 +80,10 @@ const Navigation: React.FC = () => {
     setOpen(false);
   };
 
+  const navigateToSwap = () => {
+    window.open('https://swap.impossible.finance/');
+  };
+
   return (
     <>
       <NavigationPage
@@ -113,7 +117,10 @@ const Navigation: React.FC = () => {
               />
             ))}
 
-            <GradientButton className={classes.appButton}>
+            <GradientButton
+              className={classes.appButton}
+              onClick={navigateToSwap}
+            >
               <Typography variant='subtitle2'>Launch App</Typography>
             </GradientButton>
           </Box>

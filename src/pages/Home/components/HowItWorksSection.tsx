@@ -78,13 +78,15 @@ const HowItWorksSection: React.FC = () => {
 
             <Box marginTop={5} />
             <Box justifyContent='center' alignItems='center'>
-              <Typography
-                variant='body1'
-                className={classes.href}
-                align='center'
-              >
-                Make your first swap <img src='/images/Arrow.svg' />
-              </Typography>
+              <a href='https://swap.impossible.finance/' target='_blank'>
+                <Typography
+                  variant='body1'
+                  className={classes.href}
+                  align='center'
+                >
+                  Make your first swap <img src='/images/Arrow.svg' />
+                </Typography>
+              </a>
             </Box>
           </Grid>
         </Grid>
