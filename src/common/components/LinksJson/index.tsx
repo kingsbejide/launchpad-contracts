@@ -4,7 +4,7 @@ const LinksJson = [
     items: [
       { title: 'Swap', url: 'https://swap.impossible.finance/#/swap' },
       { title: 'Liquidity', url: 'https://swap.impossible.finance/#/pool' },
-      { title: 'Staking', url: '#' },
+      { title: 'Staking', url: 'https://farms.impossible.finance/#/farms' },
     ],
   },
   {
