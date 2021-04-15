@@ -46,24 +46,28 @@ const SocialMediaSection: React.FC = () => {
                 description='The best place to get direct updates and announcements from the Impossible team '
                 icon='/images/Twitter.png'
                 iconWidth={75}
+                href='https://twitter.com/ImpossibleFi'
               />
               <InfoCard
                 title='Telegram'
                 description='Chat with our team and discuss the impossible with other community members'
                 icon='/images/Telegram.png'
                 iconWidth={75}
+                href='https://t.me/ImpossibleFinance'
               />
               <InfoCard
                 title='Github'
                 description='Everything on Impossible is open-sourced and open to public audits'
                 icon='/images/Github.png'
                 iconWidth={75}
+                href='https://github.com/ImpossibleFinance'
               />
               <InfoCard
                 title='Medium'
                 description='Here’s where we pen our thoughts on our product roadmap, strategy and the industry'
                 icon='/images/Medium.png'
                 iconWidth={75}
+                href='https://medium.com/ImpossibleFinance'
               />
             </Box>
             <Box marginTop={5} />
