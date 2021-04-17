@@ -78,7 +78,7 @@ const HowItWorksSection: React.FC = () => {
 
             <Box marginTop={5} />
             <Box justifyContent='center' alignItems='center'>
-              <a href='https://swap.impossible.finance/' target='_blank'>
+              <a href={process.env.NEXT_PUBLIC_SWAP_DOMAIN} target='_blank'>
                 <Typography
                   variant='body1'
                   className={classes.href}

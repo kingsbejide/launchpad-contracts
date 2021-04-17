@@ -81,7 +81,7 @@ const Navigation: React.FC = () => {
   };
 
   const navigateToSwap = () => {
-    window.open('https://swap.impossible.finance/');
+    window.open(process.env.NEXT_PUBLIC_SWAP_DOMAIN);
   };
 
   return (

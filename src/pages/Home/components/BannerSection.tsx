@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 const BannerSection: React.FC = () => {
   const classes = useStyles();
   const navigateToSwap = () => {
-    window.open('https://swap.impossible.finance/');
+    window.open(process.env.NEXT_PUBLIC_SWAP_DOMAIN);
   };
   return (
     <Box className={classes.container}>

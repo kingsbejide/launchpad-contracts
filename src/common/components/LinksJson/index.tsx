@@ -2,9 +2,15 @@ const LinksJson = [
   {
     title: 'Products',
     items: [
-      { title: 'Swap', url: 'https://swap.impossible.finance/#/swap' },
-      { title: 'Liquidity', url: 'https://swap.impossible.finance/#/pool' },
-      { title: 'Staking', url: 'https://farms.impossible.finance/#/farms' },
+      { title: 'Swap', url: `${process.env.NEXT_PUBLIC_DOMAIN}/#/swap` },
+      {
+        title: 'Liquidity',
+        url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/pool`,
+      },
+      {
+        title: 'Staking',
+        url: `${process.env.NEXT_PUBLIC_FARMS_DOMAIN}/#/farms`,
+      },
     ],
   },
   {
