@@ -2,7 +2,7 @@ const LinksJson = [
   {
     title: 'Products',
     items: [
-      { title: 'Swap', url: `${process.env.NEXT_PUBLIC_DOMAIN}/#/swap` },
+      { title: 'Swap', url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/swap` },
       {
         title: 'Liquidity',
         url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/pool`,
