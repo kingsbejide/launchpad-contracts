@@ -2,7 +2,7 @@ const LinksJson = [
   {
     title: 'Products',
     items: [
-      { title: 'Swap', url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/swap` },
+      { title: 'Swap', url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/swap`},
       {
         title: 'Liquidity',
         url: `${process.env.NEXT_PUBLIC_SWAP_DOMAIN}/#/pool`,
@@ -26,7 +26,11 @@ const LinksJson = [
   },
   {
     title: 'About',
-    items: [{ title: 'Blog', url: 'https://medium.com/ImpossibleFinance' }],
+    items: [
+      { title: 'Blog', url: 'https://medium.com/ImpossibleFinance' },
+      { title: 'Privacy Policies', url: '/privacy', isClientSide: true },
+      { title: 'Cookie Policy', url: '/cookie', isClientSide: true }
+    ],
   },
 ];
 

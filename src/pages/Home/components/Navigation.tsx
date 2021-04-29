@@ -10,6 +10,7 @@ import {
 import React, { useState } from 'react';
 import MenuIcon from '@material-ui/icons/Menu';
 import MenuClose from '@material-ui/icons/Close';
+import Link from 'next/link'
 
 import GradientButton from '../../../common/components/GradientButton';
 import LinksJson from '../../../common/components/LinksJson';
@@ -35,6 +36,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     '& a:not(:last-child)': {
       marginBottom: '16px',
     },
+    filter: "drop-shadow(0px 0px 20px rgba(8, 12, 108, 0.19))",
   },
   appButton: {
     padding: '10px 13px',
@@ -96,10 +98,14 @@ const Navigation: React.FC = () => {
         display='flex'
         flexDirection='row'
         justifyContent='space-between'
-        position='absolute'
+        bgcolor={'#050A5A'}
       >
         <Box display='flex' flex={2}>
-          <img src='/images/logo.svg' alt='logo' width='120px' height='30px' />
+          <Link href={'/'}>
+            <a>
+              <img src='/images/logo.svg' alt='logo' width='120px' height='30px' />
+            </a>
+          </Link>
         </Box>
         {matches ? (
           <Box
@@ -173,9 +179,12 @@ const NavigationPage: React.FC<NavigationPageProps> = ({
             </Box>
             {value.items.map((item) => (
               <Box key={item.title} marginBottom={3}>
-                <a href={item.url}>
+                {item.isClientSide ? <Link href={item.url} key={item.title}>
+                  <a className={classes.dropDownItem}>{item.title}</a>
+                </Link> : <a href={item.url} className={classes.dropDownItem}>
                   <Typography variant='body1'>{item.title}</Typography>
-                </a>
+                </a>}
+
               </Box>
             ))}
           </Box>
@@ -188,6 +197,7 @@ const NavigationPage: React.FC<NavigationPageProps> = ({
 type DropDownMenuItem = {
   url: string;
   title: string;
+  isClientSide?: boolean;
 };
 
 type DropDownMenuProps = {
@@ -203,15 +213,20 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({ title, items }) => {
         {title}
       </Typography>
       <Box className={classes.dropdownContent}>
-        {items.map((value) => (
-          <a
+        {items.map((value) => {
+          if (value.isClientSide) {
+            return <Link href={value.url} key={value.title}>
+              <a className={classes.dropDownItem}>{value.title}</a>
+            </Link>
+          }
+          return <a
             key={value.title}
             href={value.url}
             className={classes.dropDownItem}
           >
             {value.title}
           </a>
-        ))}
+        })}
       </Box>
     </Box>
   );
