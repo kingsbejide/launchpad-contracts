@@ -1,4 +1,4 @@
-Last updated: April 2021
+Last updated: May 2021
 
 # Impossible.Finance Personal Data and Privacy Policies
 
@@ -30,7 +30,7 @@ The given permission to the storage of the data, the email address as well as th
 
 ### 1.4 Processing of data
 
-We may contract with services, such as Google Analytics, to collect pseudonymous usage data, which is used for the sole purpose of helping to improve our products for our users. Subject to this Privacy Policy, and to the extent under our reasonable control, we will not associate the data with any personal user data.
+We may contract with services to collect pseudonymous usage data, which is used for the sole purpose of helping to improve our products for our users. Subject to this Privacy Policy, and to the extent under our reasonable control, we will not associate the data with any personal user data.
 
 If you wish to submit or have submitted Personal Data to us for the purpose of registering  for and obtaining the Services, you consent to our collection, processing, use and disclosure of such Personal Data for such purposes.
 
