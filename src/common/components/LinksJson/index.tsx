@@ -11,6 +11,10 @@ const LinksJson = [
         title: 'Staking',
         url: `${process.env.NEXT_PUBLIC_FARMS_DOMAIN}/#/farms`,
       },
+      {
+        title: 'Migration',
+        url: `${process.env.NEXT_PUBLIC_MIGRATE_DOMAIN}/#/migrate`,
+      },
     ],
   },
   {
