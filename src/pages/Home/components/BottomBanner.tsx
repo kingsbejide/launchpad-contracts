@@ -53,7 +53,7 @@ const BottomBanner: React.FC = () => {
       <Box display='flex' justifyContent='center' paddingY={10}>
         <Typography variant='body2'>
           {' '}
-          @ {new Date().getFullYear()} Impossible. Finance{' '}
+          © {new Date().getFullYear()} Impossible. Finance{' '}
         </Typography>
       </Box>
     </Box>
@@ -61,7 +61,7 @@ const BottomBanner: React.FC = () => {
     <Box display='flex' justifyContent='center' paddingY={10}>
       <Typography variant='body2'>
         {' '}
-        @ {new Date().getFullYear()} Impossible. Finance{' '}
+        © {new Date().getFullYear()} Impossible. Finance{' '}
       </Typography>
     </Box>
   );
