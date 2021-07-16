@@ -6,6 +6,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@material-ui/core';
+import Link from 'next/link'
 import LinksJson from '../../../common/components/LinksJson';
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -20,6 +21,12 @@ const useStyles = makeStyles((theme: Theme) => ({
       color: `${theme.palette.text.secondary}`,
     },
   },
+  mobile: {
+    '& a': {
+      textDecoration: 'none',
+      color: `${theme.palette.text.secondary}`,
+    },
+  }
 }));
 
 const BottomBanner: React.FC = () => {
@@ -50,19 +57,57 @@ const BottomBanner: React.FC = () => {
           </Box>
         ))}
       </Box>
-      <Box display='flex' justifyContent='center' paddingY={10}>
-        <Typography variant='body2'>
-          {' '}
-          © {new Date().getFullYear()} Impossible. Finance{' '}
-        </Typography>
+      <Box m={2} display='flex' justifyContent='center' alignItems="center" paddingY={10}>
+        <Box>
+          <Typography variant='body2'>
+            © {new Date().getFullYear()} Impossible. Finance{' '} 
+          </Typography>
+        </Box>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/terms">
+            <a><Typography variant='body1'>Terms</Typography></a>
+          </Link>
+        </Box>
+        <div>|</div>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/privacy">
+            <a><Typography variant='body1'>Privacy Policy</Typography></a>
+          </Link>
+        </Box>
+        <div>|</div>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/cookie">
+            <a><Typography variant='body1'>Cookie Policy</Typography></a>
+          </Link>
+        </Box>
       </Box>
     </Box>
   ) : (
-    <Box display='flex' justifyContent='center' paddingY={10}>
-      <Typography variant='body2'>
-        {' '}
-        © {new Date().getFullYear()} Impossible. Finance{' '}
-      </Typography>
+    <Box justifyContent='center' paddingY={10}>
+      <Box justifyContent='center'  display='flex' marginLeft={2} marginRight={2}>
+        <Typography variant='body2'>
+          © {new Date().getFullYear()} Impossible. Finance{' '} 
+        </Typography>
+      </Box>
+      <Box justifyContent='center' alignItems="center" className={classes.mobile} display='flex'>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/terms">
+            <a><Typography variant='body1'>Terms</Typography></a>
+          </Link>
+        </Box>
+        <div>|</div>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/privacy">
+            <a><Typography variant='body1'>Privacy Policy</Typography></a>
+          </Link>
+        </Box>
+        <div>|</div>
+        <Box marginLeft={2} marginRight={2}>
+          <Link href="/cookie">
+            <a><Typography variant='body1'>Cookie Policy</Typography></a>
+          </Link>
+        </Box>
+      </Box>
     </Box>
   );
 };

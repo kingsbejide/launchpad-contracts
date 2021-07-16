@@ -43,7 +43,7 @@ const SocialMediaSection: React.FC = () => {
             <Box display='flex' flexWrap='wrap'>
               <InfoCard
                 title='Twitter'
-                description='The best place to get direct updates and announcements from the Impossible team '
+                description='Get the latest updates and announcements from the Impossible ecosystem'
                 icon='/images/Twitter.png'
                 iconWidth={75}
                 href='https://twitter.com/ImpossibleFi'
@@ -56,11 +56,11 @@ const SocialMediaSection: React.FC = () => {
                 href='https://t.me/ImpossibleFinance'
               />
               <InfoCard
-                title='Github'
-                description='Everything on Impossible is open-sourced and open to public audits'
-                icon='/images/Github.png'
+                title='Discord'
+                description='Get your questions answered by our community'
+                icon='/images/icon_Discord.svg'
                 iconWidth={75}
-                href='https://github.com/ImpossibleFinance'
+                href='https://discord.com/invite/SyF3RzxQCZ'
               />
               <InfoCard
                 title='Medium'

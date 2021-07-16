@@ -43,51 +43,45 @@ const HowItWorksSection: React.FC = () => {
         <Grid container>
           <Grid item xs={12}>
             <Typography variant='h1' align='center' className={classes.title}>
-              DeFi made impossibly easy
+              Impossible is redefining the Launchpad experience
             </Typography>
             <Typography variant='h4' align='center' color='textSecondary'>
-              Here’s how it works
+              Here’s how we’re making it better
             </Typography>
             <Box marginTop={5} />
-            <Box overflow='auto'>
+            <Box>
               <Box
                 display='flex'
-                flexWrap={matches ? 'nowrap' : 'wrap'}
+                flexWrap={'wrap'}
                 className={classes.infoCardContainer}
                 paddingLeft={3}
               >
                 <InfoCard
-                  title='Swap'
-                  description='Bye bye complicated interfaces. You have token A and want B? 
-                  Select, click, confirm, that’s it.'
-                  icon='/images/trade.png'
+                  title='Curated Projects'
+                  description='Get access to top projects’ IDOs across many sectors such as DeFi, DEXes, NFTs, and infrastructure via our Impossible Launchpad.'
+                  icon='/images/icon_curated.svg'
+                  withShadow={false}
+                  iconWidth={120}
                 />
                 <InfoCard
-                  title='Add Liquidity'
-                  description='Earn fees by adding say tokens A and B. Anyone who swaps between them pays you a fee.*'
-                  icon='/images/liquidity.png'
+                  title='Fair'
+                  description='No more jumping through endless hoops to get tiny allocations. We believe in a fair sale and equal rights for all users, big or small'
+                  icon='/images/icon_faire.svg'
+                  withShadow={false}
+                  iconWidth={120}
                 />
                 <InfoCard
-                  title='Stake to get Rewards'
-                  description='Show proof of liquidity (staking) to supercharge earnings in the form of IF token rewards.'
-                  icon='/images/earn2.png'
+                  title='Seamless Decentralization'
+                  description="Enjoy a fluid, hassle-free sale experience - we've taken the best user flows and built it on top of decentralized architecture (even identity verification)"
+                  icon='/images/icon_seamless.svg'
+                  withShadow={false}
+                  iconWidth={120}
                 />
                 <Box marginRight={4} />
               </Box>
             </Box>
 
             <Box marginTop={5} />
-            <Box justifyContent='center' alignItems='center'>
-              <a href={process.env.NEXT_PUBLIC_SWAP_DOMAIN} target='_blank'>
-                <Typography
-                  variant='body1'
-                  className={classes.href}
-                  align='center'
-                >
-                  Make your first swap <img src='/images/Arrow.svg' />
-                </Typography>
-              </a>
-            </Box>
           </Grid>
         </Grid>
       </Container>

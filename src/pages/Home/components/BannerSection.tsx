@@ -1,22 +1,58 @@
-import { Box, Grid, makeStyles, Theme, Typography } from '@material-ui/core';
-import GradientButton from '../../../common/components/GradientButton';
+import { Box, Grid, makeStyles, Theme, Typography, Button, useMediaQuery, useTheme } from '@material-ui/core';
 import Navigation from './Navigation';
 
 const useStyles = makeStyles((theme: Theme) => ({
+  mainContainer: {
+    height: 640,
+    [theme.breakpoints.down('sm')]: {
+      height: 600,
+    },
+  },
+  videoContainer: {
+    position: "absolute",
+    zIndex: 1,
+    width: "100%",
+    '& video': {
+      objectFit: "fill",
+      width: "100%",  
+    },
+  },
   container: {
-    backgroundImage: 'url(/images/background/Banner.svg)',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: 'cover',
-    backgroundPosition: 'bottom',
-    [theme.breakpoints.down('md')]: {
-      backgroundImage: 'url(/images/background/Banner_mobile.svg)',
+    zIndex: 3,
+    position: "absolute",
+    width: "100%",
+  },
+  textContainer: {
+    zIndex: 5,
+  },
+  iconContainer: {
+    [theme.breakpoints.down('sm')]: {
+      zIndex: 0,
+      position: "absolute",
+      right: "2vh",
+      bottom: "-2vh",
+      '& img': {
+        width: 250,
+      }
+    },
+    [theme.breakpoints.down('xs')]: {
+      zIndex: 0,
+      position: "absolute",
+      right: "2vh",
+      bottom: "-12vh",
+      '& img': {
+        width: 150,
+      }
     },
   },
   contentContainer: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    minHeight: '80vh',
+    marginTop: 64,
+    [theme.breakpoints.down('sm')]: {
+      marginTop: 24,
+    },
   },
   title: {
     color: 'white',
@@ -36,47 +72,81 @@ const useStyles = makeStyles((theme: Theme) => ({
       fontSize: '15px',
     },
   },
+  cover: {
+    width: 151,
+  },
   button: {
     width: '300px',
     height: '52px',
     [theme.breakpoints.down('xs')]: {
       width: '100%',
     },
+    padding: '16px',
+    background: 'white',
+    fontSize: 18,
+    boxShadow: "0px 4px 50px rgba(0, 0, 0, 0.09)",
+    borderRadius: 12,
+    color: "616568",
+    '&:hover': {
+      background: 'white',
+    },
   },
 }));
 
 const BannerSection: React.FC = () => {
   const classes = useStyles();
-  const navigateToSwap = () => {
-    window.open(process.env.NEXT_PUBLIC_SWAP_DOMAIN);
+  const navigateToTele = () => {
+    window.open("https://t.me/ImpossibleFinance");
   };
+  const theme = useTheme();
+  const matches = useMediaQuery(theme.breakpoints.down('sm'));
   return (
-    <Box className={classes.container}>
-      <Navigation />
-      <Box className={classes.contentContainer}>
-        <Grid container>
-          <Grid item md={1} />
-          <Grid item xs={12} md={12} lg={7}>
-            <Box paddingX={4}>
-              <Typography variant='h1' className={classes.title}>
-                Inclusive financial instruments via <span>DeFi</span>
-              </Typography>
-              <Typography variant='inherit' className={classes.subtitle}>
-                Impossible Finance uses decentralised financial protocols to
-                give everyone the same access to financial products, which were
-                previously only available to institutions and select individuals
-              </Typography>
-              <Box marginTop={4} />
-              <GradientButton
-                className={classes.button}
-                onClick={navigateToSwap}
-              >
-                Launch App
-              </GradientButton>
-            </Box>
-          </Grid>
-        </Grid>
+    <Box className={classes.mainContainer}>
+      <Box className={classes.videoContainer}>
+        <video autoPlay loop muted height={matches ? 600 : 640}>
+          <source src={matches ? '/videos/landing_mobile.mp4' : '/videos/landing_bg.mp4'} type='video/mp4' />
+        </video>
       </Box>
+        <Box className={classes.container}>
+          <Navigation />
+          <Box className={classes.contentContainer}>
+            <Grid container >
+              <Grid item md={1} />
+              <Grid item sm={12} md={7} lg={7} className={classes.textContainer}>
+                <Box paddingX={4}>
+                  <Typography variant='h1' className={classes.title}>
+                    Reimagining Decentralized Finance
+                  </Typography>
+                  <Typography variant='inherit' className={classes.subtitle}>
+                  Impossible Finance is a multi-chain incubator, launchpad, 
+                  and swap platform which offers a robust product-first ecosystem that
+                  supports top-tier blockchain projects to targeted user audiences.
+                  </Typography>
+                  <Box marginTop={4} />
+                  <Button
+                    className={classes.button}
+                    onClick={navigateToTele}
+                  >
+                    Join Our Community
+                  </Button>
+                </Box>
+              </Grid>
+              <Grid item sm={12} md={4} lg={4} className={classes.iconContainer}>
+                <Box
+                  marginTop={2}
+                  display='flex'
+                  justifyContent='center'
+                  alignItems='center'
+                >
+                  <img
+                    src={"/images/F_outline.svg"}
+                    alt='outline'
+                  />
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+        </Box>
     </Box>
   );
 };

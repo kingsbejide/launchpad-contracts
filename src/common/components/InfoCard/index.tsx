@@ -43,9 +43,9 @@ const InfoCard: React.FC<InfoCardProps> = ({
     <Box
       flex={1}
       p={4}
-      className={`${classes.cardContainer} ${withShadow && classes.shadow} ${
+      className={`${classes.cardContainer} ${
         href && classes.clickable
-      }`}
+      } ${withShadow && classes.shadow}`}
       m={2}
       onClick={navigate}
     >

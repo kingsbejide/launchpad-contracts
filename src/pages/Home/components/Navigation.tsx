@@ -23,6 +23,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   dropDownText: {
     color: 'white',
     cursor: 'pointer',
+    textDecoration: 'none',
   },
   dropdownContent: {
     position: 'absolute',
@@ -70,7 +71,11 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const Navigation: React.FC = () => {
+type NavigationProps = {
+  showNavBackground?: boolean;
+};
+
+const Navigation: React.FC<NavigationProps> = ({ showNavBackground }) => {
   const classes = useStyles();
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('md'));
@@ -98,7 +103,7 @@ const Navigation: React.FC = () => {
         display='flex'
         flexDirection='row'
         justifyContent='space-between'
-        bgcolor={'#050A5A'}
+        bgcolor={showNavBackground ? '#050A5A' : 'transparent'}
       >
         <Box display='flex' flex={2}>
           <Link href={'/'}>
@@ -120,15 +125,9 @@ const Navigation: React.FC = () => {
                 key={value.title}
                 title={value.title}
                 items={value.items}
+                url={value.url}
               />
             ))}
-
-            <GradientButton
-              className={classes.appButton}
-              onClick={navigateToSwap}
-            >
-              <Typography variant='subtitle2'>Launch App</Typography>
-            </GradientButton>
           </Box>
         ) : (
           <Button onClick={openNavigationPage}>
@@ -175,7 +174,19 @@ const NavigationPage: React.FC<NavigationPageProps> = ({
         {menuList.map((value) => (
           <Box marginBottom={3} key={value.title}>
             <Box marginBottom={3}>
-              <Typography variant='subtitle2'>{value.title}</Typography>
+              <Typography variant='subtitle2'>
+              {value.url && value.url.length > 0 ? 
+                  <a
+                    key={value.title}
+                    href={value.url}
+                    className={classes.dropDownItem}
+                  >
+                    {value.title}
+                  </a>
+                :
+                  value.title
+                }  
+              </Typography>
             </Box>
             {value.items.map((item) => (
               <Box key={item.title} marginBottom={3}>
@@ -203,31 +214,45 @@ type DropDownMenuItem = {
 type DropDownMenuProps = {
   title: string;
   items: DropDownMenuItem[];
+  url?: string;
 };
 
-const DropDownMenu: React.FC<DropDownMenuProps> = ({ title, items }) => {
+const DropDownMenu: React.FC<DropDownMenuProps> = ({ title, items, url }) => {
   const classes = useStyles();
   return (
     <Box position='relative' className={classes.dropDown}>
       <Typography variant='subtitle2' className={classes.dropDownText}>
-        {title}
-      </Typography>
-      <Box className={classes.dropdownContent}>
-        {items.map((value) => {
-          if (value.isClientSide) {
-            return <Link href={value.url} key={value.title}>
-              <a className={classes.dropDownItem}>{value.title}</a>
-            </Link>
-          }
-          return <a
-            key={value.title}
-            href={value.url}
-            className={classes.dropDownItem}
+        {url && url.length > 0 ? 
+          <a
+            key={title}
+            href={url}
+            className={classes.dropDownText}
           >
-            {value.title}
+            {title}
           </a>
-        })}
-      </Box>
+        :
+          title
+        }
+      </Typography>
+      {items.length > 0 && (
+        <Box className={classes.dropdownContent}>
+          {items.map((value) => {
+            if (value.isClientSide) {
+              return <Link href={value.url} key={value.title}>
+                <a className={classes.dropDownItem}>{value.title}</a>
+              </Link>
+            }
+            return <a
+              key={value.title}
+              href={value.url}
+              className={classes.dropDownItem}
+            >
+              {value.title}
+            </a>
+          })}
+        </Box>
+        )
+      }
     </Box>
   );
 };

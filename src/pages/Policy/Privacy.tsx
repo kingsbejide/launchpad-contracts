@@ -11,7 +11,7 @@ const NEXT_PAGE =  {
 const Privacy: React.FC = () => {
   return (
     <>
-      <Navigation />
+      <Navigation showNavBackground />
       <PolicyPage markdown={PrivacyMD} next={NEXT_PAGE} />
       <BottomBanner />
     </>

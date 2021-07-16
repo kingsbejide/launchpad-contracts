@@ -11,7 +11,7 @@ const PREV_PAGE =  {
 const Privacy: React.FC = () => {
   return (
     <>
-      <Navigation />
+      <Navigation showNavBackground />
       <PolicyPage markdown={CookieMD} previous={PREV_PAGE} />
       <BottomBanner />
     </>

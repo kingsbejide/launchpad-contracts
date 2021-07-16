@@ -36,7 +36,7 @@ const BannerSection: React.FC = () => {
   const matches = useMediaQuery(theme.breakpoints.up('md'));
   return (
     <Box className={classes.contentContainer} paddingY={8} paddingX={2}>
-      <Container maxWidth='lg'>
+      <Container maxWidth='md'>
         <Grid container>
           <Grid item xs={12}>
             <Typography variant='h1' align='center' className={classes.title}>

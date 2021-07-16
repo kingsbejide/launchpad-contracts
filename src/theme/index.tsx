@@ -48,20 +48,20 @@ const theme = createMuiTheme({
   typography: {
     fontFamily: 'Acre, "Arca Majora 3"',
     h1: {
-      fontSize: '3rem',
+      fontSize: 48,
       fontWeight: 700,
       [defaultTheme.breakpoints.down('xs')]: {
         fontSize: '28px',
       },
     },
     h2: {
-      fontSize: '2.125rem',
+      fontSize: 34,
     },
     h3: {
-      fontSize: '1.75rem',
+      fontSize: 28,
     },
     h4: {
-      fontSize: '1.5rem',
+      fontSize: 24,
       [defaultTheme.breakpoints.down('xs')]: {
         fontSize: '18px',
       },
@@ -111,6 +111,10 @@ const theme = createMuiTheme({
       primary: '#3B4346',
       secondary: '#616568',
       disabled: '#A6A8AA',
+      hint: '#0074FF',
+    },
+    info: {
+      main: '#0074FF',
     },
   },
 });
