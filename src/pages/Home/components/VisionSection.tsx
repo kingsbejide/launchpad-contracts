@@ -102,21 +102,6 @@ const VisionSection: React.FC = () => {
               />
             </Box>
           </Grid>
-          <Grid item lg={6} md={6} xs={12}>
-            <Box
-              display={matches ? 'flex' : 'inline-block'}
-              position={matches ? 'initial' : 'absolute'}
-              justifyContent='flex-end'
-              // marginLeft={5}
-              marginTop={matches ? 0 : "-10vh"}
-              className={classes.impImage}
-            >
-              <img
-                src='/images/IMpossible.svg'
-                alt='quote'
-              />
-            </Box>
-          </Grid>
         </Grid>
       </Container>
     </Box>
