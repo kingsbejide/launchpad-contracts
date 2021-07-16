@@ -20,6 +20,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   title: {
     fontWeight: 800,
+    marginBottom: 8,
   },
   href: {
     fontWeight: 700,
@@ -70,6 +71,7 @@ const PartnersInvestorsSection: React.FC = () => {
                 gridGap='40px'
                 gridRowGap='50px'
                 marginTop={8}
+                marginBottom={8}
               >
                 {item
                   .map(src => (
@@ -87,10 +89,7 @@ const PartnersInvestorsSection: React.FC = () => {
                   ))}
               </Box>
               })}
-
             </Carousel>
-            
-
             <Box marginTop={5} />
           </Grid>
         </Grid>

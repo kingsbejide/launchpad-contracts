@@ -23,6 +23,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   title: {
     fontWeight: 800,
+    marginBottom: 8,
   },
   projectsBox: {
     borderSpacing: '16px 0px',
@@ -55,7 +56,7 @@ const HowItWorksSection: React.FC = () => {
                 type={ProjectCardType.COMINGSOON}
                 title='IDIA'
                 description='IDIA token is the governance and access token for deal flow allocation from the multichain, decentralized incubator and launchpad.'
-                image='/images/IDIA banner.png'
+                image='/images/IDIA banner.svg'
               />
               <ProjectCard
                 type={ProjectCardType.JOINCOMMUNITY}

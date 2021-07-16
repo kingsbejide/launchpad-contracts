@@ -8,6 +8,7 @@ import {
 } from '@material-ui/core';
 import Link from 'next/link'
 import LinksJson from '../../../common/components/LinksJson';
+import WalletCopy from '../../../common/components/WalletCopy';
 
 const useStyles = makeStyles((theme: Theme) => ({
   contentContainer: {
@@ -57,6 +58,9 @@ const BottomBanner: React.FC = () => {
           </Box>
         ))}
       </Box>
+      <Box>
+        <WalletCopy walletAddress="0xb0e1fc65c1a741b4662b813eb787d369b8614af1" walletImage="/favicon.png" walletSymbol="IF" />
+      </Box>
       <Box m={2} display='flex' justifyContent='center' alignItems="center" paddingY={10}>
         <Box>
           <Typography variant='body2'>
@@ -84,6 +88,9 @@ const BottomBanner: React.FC = () => {
     </Box>
   ) : (
     <Box justifyContent='center' paddingY={10}>
+      <Box mb={4}>
+        <WalletCopy walletAddress="0xb0e1fc65c1a741b4662b813eb787d369b8614af1" walletImage="/favicon.png" walletSymbol="IF" />
+      </Box>
       <Box justifyContent='center'  display='flex' marginLeft={2} marginRight={2}>
         <Typography variant='body2'>
           © {new Date().getFullYear()} Impossible. Finance{' '} 

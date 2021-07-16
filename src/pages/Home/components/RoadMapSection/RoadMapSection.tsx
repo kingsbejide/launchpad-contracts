@@ -27,6 +27,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   title: {
     fontWeight: 800,
+    marginBottom: 8,
   },
 }));
 

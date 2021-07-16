@@ -23,6 +23,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   title: {
     fontWeight: 800,
+    marginBottom: 8,
   },
   href: {
     fontWeight: 700,
@@ -54,7 +55,6 @@ const HowItWorksSection: React.FC = () => {
                 display='flex'
                 flexWrap={'wrap'}
                 className={classes.infoCardContainer}
-                paddingLeft={3}
               >
                 <InfoCard
                   title='Curated Projects'
@@ -77,7 +77,6 @@ const HowItWorksSection: React.FC = () => {
                   withShadow={false}
                   iconWidth={120}
                 />
-                <Box marginRight={4} />
               </Box>
             </Box>
 

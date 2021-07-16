@@ -38,8 +38,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     [theme.breakpoints.down('xs')]: {
       zIndex: 0,
       position: "absolute",
-      right: "2vh",
-      bottom: "-12vh",
+      right: "5vw",
+      bottom: "-150px",
       '& img': {
         width: 150,
       }

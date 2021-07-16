@@ -48,7 +48,7 @@ const theme = createMuiTheme({
   typography: {
     fontFamily: 'Acre, "Arca Majora 3"',
     h1: {
-      fontSize: 48,
+      fontSize: 42,
       fontWeight: 700,
       [defaultTheme.breakpoints.down('xs')]: {
         fontSize: '28px',

@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     fontWeight: 800,
   },
   caption: {
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: '42px',
     color: '#FFFFFF',
     [theme.breakpoints.down('xs')]: {
@@ -39,10 +39,21 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   impImage: {
     '& img': {
-      maxWidth: '80%',
-      width: "auto",
+      width: 650,
+      [theme.breakpoints.down('sm')]: {
+        width: 360,
+      },
       height: "auto",
     }
+  },
+  whiteLine: {
+    background: 'white',
+    height: 2,
+    marginTop: 120,
+    [theme.breakpoints.down('sm')]: {
+      marginTop: 24,
+    },
+    width: "80%"
   }
 }));
 
@@ -51,13 +62,11 @@ const VisionSection: React.FC = () => {
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const quoteWidth = matches ? 350 : 860;
-  const quoteHeight = matches ? 339 : 747;
   return (
     <Box
       className={classes.contentContainer}
       paddingTop={8}
-      paddingBottom={matches ? 5 : 24}
+      paddingBottom={matches ? 5 : 20}
       marginTop={8}
       marginBottom={8}
     >
@@ -70,13 +79,27 @@ const VisionSection: React.FC = () => {
             <Box marginTop={6} position='relative'>
               <Typography
                 variant='h1'
-                // align='center'
                 className={classes.caption}
               >
                 Level the playing field
                 <br /> by building a <span>fair</span>, more{' '}
                 <span>accessible</span> open financial system for all.
               </Typography>
+            </Box>
+            <Box className={classes.whiteLine}></Box>
+          </Grid>
+          <Grid item lg={6} md={6} xs={12}>
+            <Box
+              display={matches ? 'flex' : 'inline-block'}
+              position={matches ? 'initial' : 'absolute'}
+              justifyContent='flex-end'
+              marginTop={matches ? 0 : "-188px"}
+              className={classes.impImage}
+            >
+              <img
+                src='/images/IMpossible.svg'
+                alt='quote'
+              />
             </Box>
           </Grid>
           <Grid item lg={6} md={6} xs={12}>

@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     zIndex: 1,
     display: 'none',
     flexDirection: 'column',
-    minWidth: '200px',
+    minWidth: '150px',
     padding: '24px 16px',
     '& a:not(:last-child)': {
       marginBottom: '16px',
@@ -57,8 +57,15 @@ const useStyles = makeStyles((theme: Theme) => ({
       textDecoration: 'none',
     },
     '&:hover': {
-      textDecoration: 'underline',
+      textDecoration: "underline",
       fontWeight: 700,
+    },
+  },
+  noHover: {
+    '&:hover': {
+      textDecoration: "none",
+      fontWeight: 400,
+      pointer: 'default',
     },
   },
   navigationPage: {
@@ -192,7 +199,7 @@ const NavigationPage: React.FC<NavigationPageProps> = ({
               <Box key={item.title} marginBottom={3}>
                 {item.isClientSide ? <Link href={item.url} key={item.title}>
                   <a className={classes.dropDownItem}>{item.title}</a>
-                </Link> : <a href={item.url} className={classes.dropDownItem}>
+                </Link> : <a href={item.url} className={`${classes.dropDownItem} ${item.isDisabled ? classes.noHover : ''}`}>
                   <Typography variant='body1'>{item.title}</Typography>
                 </a>}
 
@@ -209,6 +216,7 @@ type DropDownMenuItem = {
   url: string;
   title: string;
   isClientSide?: boolean;
+  isDisabled?: boolean;
 };
 
 type DropDownMenuProps = {
@@ -245,7 +253,7 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({ title, items, url }) => {
             return <a
               key={value.title}
               href={value.url}
-              className={classes.dropDownItem}
+              className={`${classes.dropDownItem} ${value.isDisabled ? classes.noHover : ''}`}
             >
               {value.title}
             </a>

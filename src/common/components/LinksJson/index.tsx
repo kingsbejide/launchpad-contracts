@@ -2,6 +2,7 @@ type NavigationListChild = {
   title: string;
   url: string;
   isClientSide?: boolean;
+  isDisabled?: boolean;
 };
 
 type NavigationList = {
@@ -12,16 +13,17 @@ type NavigationList = {
 
 const LinksJson: NavigationList[] = [
   {
-    title: 'INVEST',
+    title: 'Invest',
     items: [
       {
         title: 'Coming Soon',
         url: `#`,
+        isDisabled: true,
       },
     ],
   },
   {
-    title: 'TRADE',
+    title: 'Trade',
     items: [
       {
         title: 'Swap',
@@ -30,7 +32,7 @@ const LinksJson: NavigationList[] = [
     ],
   },
   {
-    title: 'EARN',
+    title: 'Earn',
     items: [
       {
         title: 'Liquidity',
@@ -39,7 +41,7 @@ const LinksJson: NavigationList[] = [
     ],
   },
   {
-    title: 'DEVELOPERS',
+    title: 'Developers',
     items: [
       {
         title: 'Github',
@@ -56,7 +58,7 @@ const LinksJson: NavigationList[] = [
     ],
   },
   {
-    title: 'COMMUNITY',
+    title: 'Community',
     items: [
       { title: 'Twitter', url: 'https://twitter.com/ImpossibleFi' },
       { title: 'Telegram', url: 'https://t.me/ImpossibleFinance' },
@@ -65,7 +67,7 @@ const LinksJson: NavigationList[] = [
     ],
   },
   {
-    title: 'ABOUT',
+    title: 'About',
     items: [
       { title: 'Analytics', url: 'https://info.impossible.finance' },
       { title: 'Support', url: 'https://impossible.freshdesk.com/support/home' },
