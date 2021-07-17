@@ -66,7 +66,7 @@ const VisionSection: React.FC = () => {
     <Box
       className={classes.contentContainer}
       paddingTop={8}
-      paddingBottom={matches ? 5 : 20}
+      paddingBottom={8}
       marginTop={8}
       marginBottom={8}
     >
@@ -88,12 +88,13 @@ const VisionSection: React.FC = () => {
             </Box>
             <Box className={classes.whiteLine}></Box>
           </Grid>
+          {!matches && 
           <Grid item lg={6} md={6} xs={12}>
             <Box
-              display={matches ? 'flex' : 'inline-block'}
-              position={matches ? 'initial' : 'absolute'}
+              display='inline-block'
+              position='absolute'
               justifyContent='flex-end'
-              marginTop={matches ? 0 : "-188px"}
+              marginTop="-188px"
               className={classes.impImage}
             >
               <img
@@ -102,6 +103,7 @@ const VisionSection: React.FC = () => {
               />
             </Box>
           </Grid>
+          }
         </Grid>
       </Container>
     </Box>
