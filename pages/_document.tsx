@@ -6,14 +6,19 @@ import theme from '../src/theme';
 export default class MyDocument extends Document {
   render() {
     return (
-      <Html lang='en'>
+      <Html lang="en">
         <Head>
           {/* PWA primary color */}
-          <meta name='theme-color' content={theme.palette.primary.main} />
+          <meta name="theme-color" content={theme.palette.primary.main} />
           <link
-            rel='stylesheet'
-            href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap'
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
           />
+          <script
+            src="https://cdn.usefathom.com/script.js"
+            data-site={process.env.NEXT_FANTOM_ID}
+            defer
+          ></script>
         </Head>
         <body>
           <Main />

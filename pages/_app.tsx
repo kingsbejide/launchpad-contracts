@@ -19,9 +19,15 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Head>
         <title>Impossible Finance - DeFi made impossibly easy</title>
         <meta
-          name='viewport'
-          content='minimum-scale=1, initial-scale=1, width=device-width'
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width"
         />
+        {/* <!-- Fathom - beautiful, simple website analytics --> */}
+        <script
+          src="https://cdn.usefathom.com/script.js"
+          data-site={process.env.NEXT_FANTOM_ID}
+          defer
+        ></script>
       </Head>
       <ThemeProvider theme={theme}>
         {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
