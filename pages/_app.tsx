@@ -25,7 +25,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         {/* <!-- Fathom - beautiful, simple website analytics --> */}
         <script
           src="https://cdn.usefathom.com/script.js"
-          data-site={process.env.NEXT_FANTOM_ID}
+          data-site={process.env.NEXT_PUBLIC_FATHOM_ID}
           defer
         ></script>
       </Head>
