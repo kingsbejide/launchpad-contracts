@@ -28,8 +28,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-const PARTNERS = ["Alameda", "Bitscale", "BRCAPITAL", "CMS", "Coin98_Ventures", "d1", "Daedalus", "divergence", "GBV", "Hashed", "Incuba_Alpha", "IOSG", "LAO", "lego", "lemniscap", 
-  "LongHashVentures", "Maple Leaf", "mgnr", "Primitive", "SANCTOR", "Sino", "Ternary", "true",
+const PARTNERS = ["Alameda", "Bitscale", "BRCAPITAL", "CMS", "Coin98_Ventures", "d1", "DAOSquare", "Daedalus", "divergence", "GBV", "Hashed", "IG", "Incuba_Alpha", "IOSG", "LAO", "lego", "lemniscap", 
+  "LongHashVentures", "Maple Leaf", "mgnr", "Primitive", "SANCTOR", "Sino", "snapshot", "Ternary", "true",
 ]
 
 const PartnersInvestorsSection: React.FC = () => {
