@@ -7,6 +7,11 @@ const useStyles = makeStyles((theme: Theme) => ({
     [theme.breakpoints.down('sm')]: {
       height: 600,
     },
+    [theme.breakpoints.down('md')]: {
+      background: 'url(/images/bg_mobile.png)',
+      backgroundSize: 'cover',
+    },
+    background: 'none',
   },
   videoContainer: {
     position: "absolute",
@@ -103,9 +108,11 @@ const BannerSection: React.FC = () => {
   return (
     <Box className={classes.mainContainer}>
       <Box className={classes.videoContainer}>
-        <video autoPlay loop muted height={matches ? 600 : 640}>
-          <source src={matches ? '/videos/landing_mobile.mp4' : '/videos/landing_bg.mp4'} type='video/mp4' />
-        </video>
+        {!matches &&
+          <video autoPlay loop muted height={640}>
+            <source src={'/videos/landing_bg.mp4'} type='video/mp4' />
+          </video>
+        }        
       </Box>
         <Box className={classes.container}>
           <Navigation />
