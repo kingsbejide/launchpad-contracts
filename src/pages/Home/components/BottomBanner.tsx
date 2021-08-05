@@ -64,7 +64,7 @@ const BottomBanner: React.FC = () => {
       <Box m={2} display='flex' justifyContent='center' alignItems="center" paddingY={10}>
         <Box>
           <Typography variant='body2'>
-            © {new Date().getFullYear()} Impossible. Finance{' '} 
+            © {new Date().getFullYear()} Impossible.Finance{' '} 
           </Typography>
         </Box>
         <Box marginLeft={2} marginRight={2}>
@@ -93,7 +93,7 @@ const BottomBanner: React.FC = () => {
       </Box>
       <Box justifyContent='center'  display='flex' marginLeft={2} marginRight={2}>
         <Typography variant='body2'>
-          © {new Date().getFullYear()} Impossible. Finance{' '} 
+          © {new Date().getFullYear()} Impossible.Finance{' '} 
         </Typography>
       </Box>
       <Box justifyContent='center' alignItems="center" className={classes.mobile} display='flex'>

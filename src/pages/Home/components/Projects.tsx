@@ -48,7 +48,7 @@ const HowItWorksSection: React.FC = () => {
               IDO Projects
             </Typography>
             <Typography variant='h4' align='center' color='textSecondary'>
-              Stay tune for the upcoming IDO projects.
+              Stay tuned for the upcoming IDO projects.
             </Typography>
             <Box marginTop={5} />
             <Box className={classes.projectsBox} display={smallScreen ? 'flex' : 'table'} flexWrap='wrap' alignItems="center" justifyContent="center" margin="auto">
