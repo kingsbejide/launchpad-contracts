@@ -49,7 +49,7 @@ const LinksJson: NavigationList[] = [
       },
       {
         title: 'GitBook',
-        url: `https://abcstablexyz.gitbook.io/impossiblefinance/launchpad/launchpad-smart-contracts`,
+        url: `https://docs.impossible.finance/launchpad/overview`,
       },
       {
         title: 'Bug Bounty',
