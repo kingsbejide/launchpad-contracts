@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     width: "100%",
     '& video': {
       objectFit: "fill",
-      width: "100%",  
+      width: "100%",
     },
   },
   container: {
@@ -100,8 +100,8 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 const BannerSection: React.FC = () => {
   const classes = useStyles();
-  const navigateToTele = () => {
-    window.open("https://t.me/ImpossibleFinance");
+  const navigateToInvest = () => {
+    window.open(process.env.NEXT_PUBLIC_INVEST_DOMAIN);
   };
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.down('sm'));
@@ -112,48 +112,48 @@ const BannerSection: React.FC = () => {
           <video autoPlay loop muted height={640}>
             <source src={'/videos/landing_bg.mp4'} type='video/mp4' />
           </video>
-        }        
+        }
       </Box>
-        <Box className={classes.container}>
-          <Navigation />
-          <Box className={classes.contentContainer}>
-            <Grid container >
-              <Grid item md={1} />
-              <Grid item sm={12} md={7} lg={7} className={classes.textContainer}>
-                <Box paddingX={4}>
-                  <Typography variant='h1' className={classes.title}>
-                    Reimagining Decentralized Finance
-                  </Typography>
-                  <Typography variant='inherit' className={classes.subtitle}>
-                  Impossible Finance is a multi-chain incubator, launchpad, 
+      <Box className={classes.container}>
+        <Navigation />
+        <Box className={classes.contentContainer}>
+          <Grid container >
+            <Grid item md={1} />
+            <Grid item sm={12} md={7} lg={7} className={classes.textContainer}>
+              <Box paddingX={4}>
+                <Typography variant='h1' className={classes.title}>
+                  Reimagining Decentralized Finance
+                </Typography>
+                <Typography variant='inherit' className={classes.subtitle}>
+                  Impossible Finance is a multi-chain incubator, launchpad,
                   and swap platform which offers a robust product-first ecosystem that
                   supports top-tier blockchain projects to targeted user audiences.
-                  </Typography>
-                  <Box marginTop={4} />
-                  <Button
-                    className={classes.button}
-                    onClick={navigateToTele}
-                  >
-                    Join Our Community
-                  </Button>
-                </Box>
-              </Grid>
-              <Grid item sm={12} md={4} lg={4} className={classes.iconContainer}>
-                <Box
-                  marginTop={2}
-                  display='flex'
-                  justifyContent='center'
-                  alignItems='center'
+                </Typography>
+                <Box marginTop={4} />
+                <Button
+                  className={classes.button}
+                  onClick={navigateToInvest}
                 >
-                  <img
-                    src={"/images/F_outline.svg"}
-                    alt='outline'
-                  />
-                </Box>
-              </Grid>
+                  Launch App
+                </Button>
+              </Box>
             </Grid>
-          </Box>
+            <Grid item sm={12} md={4} lg={4} className={classes.iconContainer}>
+              <Box
+                marginTop={2}
+                display='flex'
+                justifyContent='center'
+                alignItems='center'
+              >
+                <img
+                  src={"/images/F_outline.svg"}
+                  alt='outline'
+                />
+              </Box>
+            </Grid>
+          </Grid>
         </Box>
+      </Box>
     </Box>
   );
 };

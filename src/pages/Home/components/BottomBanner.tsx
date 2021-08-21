@@ -58,13 +58,14 @@ const BottomBanner: React.FC = () => {
           </Box>
         ))}
       </Box>
-      <Box>
+      <Box display="flex" justifyContent='center'>
         <WalletCopy walletAddress="0xb0e1fc65c1a741b4662b813eb787d369b8614af1" walletImage="/favicon.png" walletSymbol="IF" />
+        <WalletCopy walletAddress="0x0b15Ddf19D47E6a86A56148fb4aFFFc6929BcB89" walletImage="/images/IDIA.png" walletSymbol="IDIA" />
       </Box>
       <Box m={2} display='flex' justifyContent='center' alignItems="center" paddingY={10}>
         <Box>
           <Typography variant='body2'>
-            © {new Date().getFullYear()} Impossible.Finance{' '} 
+            © {new Date().getFullYear()} Impossible.Finance{' '}
           </Typography>
         </Box>
         <Box marginLeft={2} marginRight={2}>
@@ -90,10 +91,11 @@ const BottomBanner: React.FC = () => {
     <Box justifyContent='center' paddingY={10}>
       <Box mb={4}>
         <WalletCopy walletAddress="0xb0e1fc65c1a741b4662b813eb787d369b8614af1" walletImage="/favicon.png" walletSymbol="IF" />
+        <WalletCopy walletAddress="0x0b15Ddf19D47E6a86A56148fb4aFFFc6929BcB89" walletImage="/images/IDIA.png" walletSymbol="IDIA" />
       </Box>
-      <Box justifyContent='center'  display='flex' marginLeft={2} marginRight={2}>
+      <Box justifyContent='center' display='flex' marginLeft={2} marginRight={2}>
         <Typography variant='body2'>
-          © {new Date().getFullYear()} Impossible.Finance{' '} 
+          © {new Date().getFullYear()} Impossible.Finance{' '}
         </Typography>
       </Box>
       <Box justifyContent='center' alignItems="center" className={classes.mobile} display='flex'>

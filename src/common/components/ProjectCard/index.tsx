@@ -82,6 +82,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 export enum ProjectCardType {
+  'BASIC' = 'BASIC',
   'COMINGSOON' = 'COMINGSOON',
   'JOINCOMMUNITY' = 'JOINCOMMUNITY',
 }
@@ -99,11 +100,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         Coming Soon!
       </Typography>
     }
-    return <a href="https://t.me/ImpossibleFinance" target="_blank" rel="noopener noreferrer">
-    <Button className={classes.button}>
-      Join Our Community <ArrowForwardIcon />
-    </Button>
-  </a>
+    if (type === ProjectCardType.JOINCOMMUNITY) {
+      return <a href="https://t.me/ImpossibleFinance" target="_blank" rel="noopener noreferrer">
+        <Button className={classes.button}>
+          Join Our Community <ArrowForwardIcon />
+        </Button>
+      </a>
+    }
+    return null;
   }
 
   const classes = useStyles();

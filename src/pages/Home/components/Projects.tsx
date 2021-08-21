@@ -53,10 +53,16 @@ const HowItWorksSection: React.FC = () => {
             <Box marginTop={5} />
             <Box className={classes.projectsBox} display={smallScreen ? 'flex' : 'table'} flexWrap='wrap' alignItems="center" justifyContent="center" margin="auto">
               <ProjectCard
-                type={ProjectCardType.COMINGSOON}
+                type={ProjectCardType.BASIC}
                 title='IDIA'
                 description='IDIA token is the governance and access token for deal flow allocation from the multichain, decentralized incubator and launchpad.'
                 image='/images/IDIA banner.svg'
+              />
+              <ProjectCard
+                type={ProjectCardType.BASIC}
+                title='OpenSwap'
+                description='OpenSwap is a 1-stop DeFi hub that enables the most efficient on-chain and cross-chain swaps through unique liquidity queues, hybrid smart routing, and interchain bridging.'
+                image='/images/OpenSwap banner.png'
               />
               <ProjectCard
                 type={ProjectCardType.JOINCOMMUNITY}
