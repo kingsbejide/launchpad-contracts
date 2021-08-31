@@ -470,8 +470,7 @@ export default describe('IFAllocationMaster', function () {
             _bumpSaleCounter)).to.emit(IFAllocationMaster, "DisableTrack")
             .withArgs(trackNum)
             
-          }
-         
+          }  
       }
     }
 
