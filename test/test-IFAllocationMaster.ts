@@ -235,7 +235,6 @@ export default describe('IFAllocationMaster', function () {
 
       // current block number
       const currBlockNum = await ethers.provider.getBlockNumber()
-      
 
       // current block
       const currBlock = await ethers.provider.getBlock(currBlockNum)
@@ -330,11 +329,7 @@ export default describe('IFAllocationMaster', function () {
     )
   })
 
-
-
-
-  it('can add track checkpoint', async()=> {
- 
+  it('can add track checkpoint', async () => {
     mineNext()
     await IFAllocationMaster.addTrack(
       'TEST Track', // name
@@ -346,85 +341,83 @@ export default describe('IFAllocationMaster', function () {
     )
 
     //check for track number/check id
-  
-    const trackNum = 0;
-   
-  //call the addTrackCheckpoint function
-  let _bumpSaleCounter = true;
-  let disabled = true;
-  mineNext()
-  await IFAllocationMaster.addTrackCheckpoint(
-    trackNum,
-    '2000',
-    true,
-    disabled,
-    _bumpSaleCounter
+
+    const trackNum = 0
+
+    //call the addTrackCheckpoint function
+    let _bumpSaleCounter = true
+    let disabled = true
+    mineNext()
+    await IFAllocationMaster.addTrackCheckpoint(
+      trackNum,
+      '2000',
+      true,
+      disabled,
+      _bumpSaleCounter
     )
-    
 
     mineNext()
-    const nTrackCheckpoints = await IFAllocationMaster.trackCheckpointCounts(trackNum);
-    
-    
+    const nTrackCheckpoints = await IFAllocationMaster.trackCheckpointCounts(
+      trackNum
+    )
 
     mineNext()
-    if(nTrackCheckpoints == 0){
-      await IFAllocationMaster.trackCheckpoints(
-        trackNum,
-       0
+    if (nTrackCheckpoints == 0) {
+      await IFAllocationMaster.trackCheckpoints(trackNum, 0)
+      const nTrackCheckpoints2 = await IFAllocationMaster.trackCheckpointCounts(
+        trackNum
       )
-      const nTrackCheckpoints2 = await IFAllocationMaster.trackCheckpointCounts(trackNum);
-      expect(nTrackCheckpoints2).to.equal(nTrackCheckpoints + 1); 
-    }
-    else{
+      expect(nTrackCheckpoints2).to.equal(nTrackCheckpoints + 1)
+    } else {
       mineNext()
       //call track
       const latestTrackCp = await IFAllocationMaster.trackCheckpoints(
         trackNum,
-       ( nTrackCheckpoints - 1)
+        nTrackCheckpoints - 1
       )
 
-      if(latestTrackCp.disabled){
+      if (latestTrackCp.disabled) {
         //should revert
-     
-         
-      }
-      else{
-
+      } else {
         mineNext()
         //calculate additional block
-           //calculate additional block
+        //calculate additional block
         // current block number
-      const currBlockNum = await ethers.provider.getBlockNumber()
-      //check lastblock
-      const lastBlockNum = (latestTrackCp.blockNumber).toNumber()
+        const currBlockNum = await ethers.provider.getBlockNumber()
+        //check lastblock
+        const lastBlockNum = latestTrackCp.blockNumber.toNumber()
         //additional block
-     const additionalBlocks = currBlockNum - lastBlockNum;
+        const additionalBlocks = currBlockNum - lastBlockNum
 
+        mineNext()
+        //get weight acrrual rate in track
+        //get track
 
-     mineNext()
-     //get weight acrrual rate in track
-     //get track
-    
-     const track = await IFAllocationMaster.tracks(trackNum);
-     const weightAccrualRate = track.weightAccrualRate;
-     console.log(track, 'track details')
+        const track = await IFAllocationMaster.tracks(trackNum)
+        const weightAccrualRate = track.weightAccrualRate
+        console.log(track, 'track details')
 
-     //calculate total staked in last track
-     const totalStaked = (latestTrackCp.totalStaked).toNumber();
-     console.log(totalStaked, 'total staked converted')
+        //calculate total staked in last track
+        const totalStaked = latestTrackCp.totalStaked.toNumber()
+        console.log(totalStaked, 'total staked converted')
 
         //calculate margin accrued stake weight
-        const marginalAccruedStakeWeight = (additionalBlocks * weightAccrualRate * totalStaked)/ 10**18;
+        const marginalAccruedStakeWeight =
+          (additionalBlocks * weightAccrualRate * totalStaked) / 10 ** 18
         //calculate new stake weight
-        const newStakeWeight = (latestTrackCp.totalStakeWeight).toNumber() + marginalAccruedStakeWeight;
+        const newStakeWeight =
+          latestTrackCp.totalStakeWeight.toNumber() + marginalAccruedStakeWeight
 
-        console.log(marginalAccruedStakeWeight, newStakeWeight, 'margin and new stake weight')
+        console.log(
+          marginalAccruedStakeWeight,
+          newStakeWeight,
+          'margin and new stake weight'
+        )
 
-        if(_bumpSaleCounter){
+        if (_bumpSaleCounter) {
           mineNext()
           //get active roll over weight
-        /*  mineNext()
+          /*  mineNext()
           const activeRollOverWeight = (await IFAllocationMaster.trackTotalActiveRollOvers(
             trackNum, latestTrackCp.numFinishedSales)).toNumber();
 
@@ -439,48 +432,57 @@ export default describe('IFAllocationMaster', function () {
             (newStakeWeight - activeRollOverWeight)
 
          */
-    //    console.log(latestTrackCp, 'last track cp')
-        expect(await IFAllocationMaster.addTrackCheckpoint(trackNum,
-          '2000',
-          true,
-          true,
-          _bumpSaleCounter)).to.emit(IFAllocationMaster, "BumpSaleCounter")
-          .withArgs(trackNum, (latestTrackCp.numFinishedSales + 1))
-          
-        } 
+          //    console.log(latestTrackCp, 'last track cp')
+          expect(
+            await IFAllocationMaster.addTrackCheckpoint(
+              trackNum,
+              '2000',
+              true,
+              true,
+              _bumpSaleCounter
+            )
+          )
+            .to.emit(IFAllocationMaster, 'BumpSaleCounter')
+            .withArgs(trackNum, latestTrackCp.numFinishedSales + 1)
+        }
         mineNext()
 
-        if(additionalBlocks == 0){
+        if (additionalBlocks == 0) {
           //
-        }else{
+        } else {
           //new track check point should increase
-          await IFAllocationMaster.trackCheckpoints(
-            trackNum,
-            nTrackCheckpoints
-          )
-          const nTrackCheckpoints2 = await IFAllocationMaster.trackCheckpointCounts(trackNum);
-          expect(nTrackCheckpoints2).to.equal(nTrackCheckpoints+ 1)
+          await IFAllocationMaster.trackCheckpoints(trackNum, nTrackCheckpoints)
+          const nTrackCheckpoints2 =
+            await IFAllocationMaster.trackCheckpointCounts(trackNum)
+          expect(nTrackCheckpoints2).to.equal(nTrackCheckpoints + 1)
         }
 
-        if(!latestTrackCp.disabled && disabled){
-          expect(await IFAllocationMaster.addTrackCheckpoint(trackNum,
-            '2000',
-            true,
-            true,
-            _bumpSaleCounter)).to.emit(IFAllocationMaster, "DisableTrack")
+        if (!latestTrackCp.disabled && disabled) {
+          expect(
+            await IFAllocationMaster.addTrackCheckpoint(
+              trackNum,
+              '2000',
+              true,
+              true,
+              _bumpSaleCounter
+            )
+          )
+            .to.emit(IFAllocationMaster, 'DisableTrack')
             .withArgs(trackNum)
-            
-          }  
+        }
       }
     }
 
-    expect(await IFAllocationMaster.addTrackCheckpoint(trackNum,
-      '2000',
-      true,
-      true,
-      _bumpSaleCounter)).to.emit(IFAllocationMaster, "AddTrackCheckpoint")
+    expect(
+      await IFAllocationMaster.addTrackCheckpoint(
+        trackNum,
+        '2000',
+        true,
+        true,
+        _bumpSaleCounter
+      )
+    )
+      .to.emit(IFAllocationMaster, 'AddTrackCheckpoint')
       .withArgs(trackNum, await ethers.provider.getBlockNumber())
-  })  
+  })
 })
-
-
