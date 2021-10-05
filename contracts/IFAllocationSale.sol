@@ -7,6 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/metatx/ERC2771Context.sol';
 import './IFAllocationMaster.sol';
 
 contract IFAllocationSale is Ownable, ReentrancyGuard {

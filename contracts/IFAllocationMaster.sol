@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/metatx/ERC2771Context.sol';
 
 // IFAllocationMaster is responsible for persisting all launchpad state between project token sales
 // in order for the sales to have clean, self-enclosed, one-time-use states.
