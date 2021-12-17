@@ -16,7 +16,9 @@ contract vIDIA {
         bool enabled;
     }
 
-    // globalRewardRatio;
+    struct UserInfo {
+        uint256 owedReward;
+    }
 
     struct StakeTokenStats {
         uint256 accumulatedPenalty;
@@ -25,11 +27,17 @@ contract vIDIA {
         uint256 totalStakers;
     }
 
+    // stakeable tokens
+    address[] stakeTokens;
+
     // token address => token config
     mapping(address => StakeTokenConfig) public tokenConfigurations;
 
     // token address => token stats
     mapping(address => StakeTokenStats) public tokenStats;
+
+    // user info mapping (user addr => token addr => user info)
+    mapping(address => mapping(address => UserInfo)) public userInfo;
 
     // todo: events
 
@@ -50,6 +58,8 @@ contract vIDIA {
     function immediateClaim() public {}
 
     function claimReward() public {}
+
+    // owner only addStakeToken
 
     // owner only setPenalty
 
