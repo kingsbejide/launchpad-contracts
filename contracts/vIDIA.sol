@@ -18,6 +18,7 @@ contract vIDIA {
 
     struct UserInfo {
         uint256 owedReward;
+        uint256 stakedAmount;
     }
 
     struct StakeTokenStats {
@@ -45,13 +46,37 @@ contract vIDIA {
         console.log('asdf');
     }
 
-    function stake(uint256 amount) public returns (uint256) {
-        // todo: sure to prevent staking non stakeable
-        console.log(amount);
-        return amount;
+    function stake(uint256 _amount, address _token) public {
+        require(tokenConfigurations[_token].enabled , "Invalid token for staking.");
+        require(_amount != 0);
+
+
+        tokenStats[_token].totalStakedAmount =  tokenStats[_token].totalStakedAmount += _amount;
+        userInfo[msg.sender][_token].stakedAmount = userInfo[msg.sender][_token].stakedAmount += _amount;
     }
 
-    function unstake() public {}
+    // function stakeOf(address staker, address token)  public view returns(uint256) {
+    //     return 
+    // }
+
+    // returns pending staking rewards to user 
+    // function pendingRewards(address staker) public view returns(uint256) {
+    //     return 
+    // }
+
+
+
+    function unstake(uint256 _amount, address _token) public {
+        require(tokenConfigurations[_token].enabled , "Invalid token for staking.");
+        require(_amount != 0);
+
+
+        tokenStats[_token].totalStakedAmount =  tokenStats[_token].totalStakedAmount -= _amount;
+        userInfo[msg.sender][_token].stakedAmount = userInfo[msg.sender][_token].stakedAmount -= _amount;
+        //todo: start unvesting period
+    }
+
+    function immediateUnstake() public {}
 
     function claim() public {}
 
@@ -61,7 +86,8 @@ contract vIDIA {
 
     // owner only addStakeToken
 
-    // owner only setPenalty
+    // owner only setStakeTokenUnvestingDelay
+    // owner only setStakeTokenPenalty
+    // owner only setStakeTokenEnabled
 
-    // owner only setUnvestingDelay
 }
