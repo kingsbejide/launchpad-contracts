@@ -41,23 +41,24 @@ contract vIDIA {
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
-    // todo: events
+    // Events
+    
+    event Stake(address _from, uint256 amount, address token);
 
-    constructor() {
-        console.log('asdf');
-    }
+    event Unstake(address _from, uint256 amount, address token);
 
-    function stake(uint256 _amount, address _token) public {
+
+    function stake(uint256 amount, address token) public {
         require(
-            tokenConfigurations[_token].enabled,
+            tokenConfigurations[token].enabled,
             'Invalid token for staking.'
         );
-        require(_amount != 0);
+        require(amount != 0);
 
-        tokenStats[_token].totalStakedAmount = tokenStats[_token]
-        .totalStakedAmount += _amount;
-        userInfo[msg.sender][_token].stakedAmount = userInfo[msg.sender][_token]
-        .stakedAmount += _amount;
+        tokenStats[token].totalStakedAmount += amount;
+        userInfo[msg.sender][token].stakedAmount += amount;
+
+        emit Stake(msg.sender, amount, token);
     }
 
     // function stakeOf(address staker, address token)  public view returns(uint256) {
@@ -69,19 +70,21 @@ contract vIDIA {
     //     return
     // }
 
-    function unstake(uint256 _amount, address _token) public {
+    function unstake(uint256 amount, address token) public {
         require(
-            tokenConfigurations[_token].enabled,
+            tokenConfigurations[token].enabled,
             'Invalid token for staking.'
         );
-        require(_amount != 0);
+        require(amount != 0);
 
-        tokenStats[_token].totalStakedAmount = tokenStats[_token]
-        .totalStakedAmount -= _amount;
-        userInfo[msg.sender][_token].stakedAmount = userInfo[msg.sender][_token]
-        .stakedAmount -= _amount;
+        tokenStats[token].totalStakedAmount -= amount;
+        userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
-        userInfo[msg.sender][_token].unvestAt =block.timestamp + tokenConfigurations[_token].unvestingDelay;
+        userInfo[msg.sender][token].unvestAt =
+            block.timestamp +
+            tokenConfigurations[token].unvestingDelay;
+        
+        emit Unstake(msg.sender, amount, token); 
     }
 
     function immediateUnstake() public {}
