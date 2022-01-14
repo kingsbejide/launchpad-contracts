@@ -3,8 +3,9 @@ pragma solidity ^0.8.4;
 
 import "hardhat/console.sol";
 import '@openzeppelin/contracts/access/Ownable.sol';
+import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 
-contract vIDIA is Ownable {
+contract vIDIA is AccessControlEnumerable {
     // STRUCTS
 
     // Configuration info for a stakeable token
@@ -28,6 +29,8 @@ contract vIDIA is Ownable {
         uint256 totalStakers;
     }
 
+    bytes32 public constant PENALTY_SETTER_ROLE = keccak256("PENALTY_SETTER_ROLE");
+
     // stakeable tokens
     address[] stakeTokens;
 
@@ -43,7 +46,7 @@ contract vIDIA is Ownable {
     // todo: events
 
     constructor() {
-        console.log('asdf');
+        _setupRole(PENALTY_SETTER_ROLE, msg.sender);
     }
 
     function stake(uint256 amount) public returns (uint256) {
@@ -62,7 +65,8 @@ contract vIDIA is Ownable {
 
     // owner only addStakeToken
 
-    function setPenalty(uint256 newPenalty, address token) external onlyOwner {
+    function setPenalty(uint256 newPenalty, address token) external {
+        require(hasRole(PENALTY_SETTER_ROLE, _msgSender()), "Must have penalty setter role");
         tokenConfigurations[token].penalty = newPenalty;
     }
 
