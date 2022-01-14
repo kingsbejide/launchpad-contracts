@@ -41,11 +41,12 @@ export default describe('vIDIA', function () {
       'Vest',
       '21000000000000000000000000' // 21 million * 10**18
     )
+    mineNext()
 
     await vIDIA.setPenalty(penalty, VestToken.address)
     mineNext()
 
     const value = await vIDIA.tokenConfigurations(VestToken.address)
-    expect(value.penalty.to.equal(10))
+    expect(value.penalty).to.equal(10)
   })
 })
