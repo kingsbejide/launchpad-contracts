@@ -51,9 +51,9 @@ contract vIDIA {
     function stake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
-            'Invalid token for staking.'
+            'Invalid token for staking'
         );
-        require(amount != 0);
+        require(amount <= 0);
 
         tokenStats[token].totalStakedAmount += amount;
         userInfo[msg.sender][token].stakedAmount += amount;
@@ -73,9 +73,9 @@ contract vIDIA {
     function unstake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
-            'Invalid token for staking.'
+            'Invalid token for staking'
         );
-        require(amount != 0);
+        require(amount <= 0);
 
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
@@ -100,7 +100,7 @@ contract vIDIA {
     // Function for owner to set an optional, separate whitelist setter
     function setWhitelistSetter(address _whitelistSetter) external onlyOwner {
         // sale must not have started
-        require(block.timestamp < startTime, 'sale already started');
+        require(block.timestamp < startTime, 'Sale already started');
 
         whitelistSetter = _whitelistSetter;
 
@@ -124,7 +124,7 @@ contract vIDIA {
         require(_to != address(0));
         require(_value <= balances[msg.sender]);
         //ensure only whitelisted addresses can transfer
-        require(checkWhitelist(_msgSender(), merkleProof), 'proof invalid');
+        require(checkWhitelist(_msgSender(), merkleProof), 'Proof invalid');
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
         emit Transfer(msg.sender, _to, _value);
