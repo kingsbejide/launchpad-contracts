@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import 'hardhat/console.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract vIDIA {
     // STRUCTS
@@ -20,6 +21,9 @@ contract vIDIA {
         uint256 owedReward;
         uint256 stakedAmount;
         uint256 unvestAt;
+        //keep track of each user unstake amount
+        // uint256[] unstakes; 
+        //mapping of unstake timestamp to unstake amount to keep track of multiple unstakes by same user
     }
 
     struct StakeTokenStats {
@@ -27,6 +31,11 @@ contract vIDIA {
         uint256 totalStakedAmount;
         uint256 totalUnstakedAmount;
         uint256 totalStakers;
+    }
+
+    struct UnstakeStats {
+        uint256 unstakedAmount;
+        uint256 unstakedAt;
     }
 
     // stakeable tokens
@@ -40,6 +49,9 @@ contract vIDIA {
 
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
+
+    // user address => token addr => unstake info
+    mapping(address => mapping(address => UnstakeStats)) public unstakeTokenStats;
 
     // Events
     
@@ -57,6 +69,7 @@ contract vIDIA {
 
         tokenStats[token].totalStakedAmount += amount;
         userInfo[msg.sender][token].stakedAmount += amount;
+
 
         emit Stake(msg.sender, amount, token);
     }
@@ -80,16 +93,23 @@ contract vIDIA {
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
-        userInfo[msg.sender][token].unvestAt =
-            block.timestamp +
+        uint256 unvestAt = block.timestamp +
             tokenConfigurations[token].unvestingDelay;
+        //store earliest unvest here?
+        userInfo[msg.sender][token].unvestAt = unvestAt;
+            
+        
+        userInfo[msg.sender][token].unstakes[unvestAt] = amount;
         
         emit Unstake(msg.sender, amount, token); 
     }
 
     function immediateUnstake() public {}
 
-    function claim() public {}
+    function claim(address token) public {
+        require(block.timestamp < userInfo[msg.sender][token].unvestAt, 'User finished unvesting period');
+        transfer(msg.sender,unstakeTokenStats[msg.sender][token].unstakedAmount);
+    }
 
     function immediateClaim() public {}
 
@@ -98,9 +118,7 @@ contract vIDIA {
     //whitelist
 
     // Function for owner to set an optional, separate whitelist setter
-    function setWhitelistSetter(address _whitelistSetter) external onlyOwner {
-        // sale must not have started
-        require(block.timestamp < startTime, 'Sale already started');
+    function setWhitelistSetter(address _whitelistSetter) external onlyOwner {  
 
         whitelistSetter = _whitelistSetter;
 
