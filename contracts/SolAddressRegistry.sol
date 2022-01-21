@@ -8,7 +8,7 @@ contract SolAddressRegistry is ERC2771ContextUpdateable {
 
     struct UserAddressMap {
         address evmAddr;
-        bytes solAddr;
+        string solAddr;
     }
 
     //// vars
@@ -17,6 +17,8 @@ contract SolAddressRegistry is ERC2771ContextUpdateable {
     mapping(address => UserAddressMap) public registry;
     // array of all user evm addresses
     address[] public addresses;
+    // count of addresses
+    uint64 addrCount;
 
     //// events
 
@@ -24,16 +26,27 @@ contract SolAddressRegistry is ERC2771ContextUpdateable {
 
     //// functions
 
-    function registerSolAddress(bytes memory solAddr) public {
-        // store in map
+    function registerSolAddress(string memory solAddr) public returns (bool) {
+        // require non 0 address
+        require(msg.sender != address(0), 'Address cannot be 0x0');
+
+        // check if address is being registered for the first time
+        bool firstRegister = registry[msg.sender].evmAddr == address(0);
+        if (firstRegister) {
+            // store in array
+            addresses.push(msg.sender);
+            // count up
+            addrCount++;
+        }
+
+        // update map
         registry[msg.sender] = UserAddressMap({
             evmAddr: msg.sender,
             solAddr: solAddr
         });
 
-        // store in array
-        addresses.push(msg.sender);
-
         emit RegisterAddress(msg.sender);
+
+        return true;
     }
 }
