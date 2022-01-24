@@ -42,5 +42,21 @@ export default describe('SolAddressRegistry', function () {
     expect(regEntry1.solAddr).to.equal(solAddr1)
     expect(regEntry2.evmAddr).to.equal(user2.address)
     expect(regEntry2.solAddr).to.equal(solAddr2)
+
+    // address count
+    expect(await SolAddressRegistry.addrCount()).to.equal(2)
+
+    // attempt reregister
+    await SolAddressRegistry.connect(user1).registerSolAddress('foo')
+
+    mineNext()
+
+    // check output of reregister
+    const regEntry1Again = await SolAddressRegistry.registry(user1.address)
+    expect(regEntry1Again.evmAddr).to.equal(user1.address)
+    expect(regEntry1Again.solAddr).to.equal('foo')
+
+    // address count should be unchanged
+    expect(await SolAddressRegistry.addrCount()).to.equal(2)
   })
 })

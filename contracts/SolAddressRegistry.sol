@@ -18,7 +18,7 @@ contract SolAddressRegistry is ERC2771ContextUpdateable {
     // array of all user evm addresses
     address[] public addresses;
     // count of addresses
-    uint64 addrCount;
+    uint64 public addrCount;
 
     //// events
 
