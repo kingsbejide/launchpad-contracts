@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "hardhat/console.sol";
+import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
+import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 
 contract vIDIA is AccessControlEnumerable {
     // STRUCTS
