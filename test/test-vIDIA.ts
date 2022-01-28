@@ -14,7 +14,6 @@ export default describe('vIDIA', function () {
   let owner: SignerWithAddress
   let vester: SignerWithAddress
 
-
   it('deploys', async function () {
     // get owner
     // const [owner] = await ethers.getSigners()

@@ -29,7 +29,8 @@ contract vIDIA is AccessControlEnumerable {
         uint256 totalStakers;
     }
 
-    bytes32 public constant PENALTY_SETTER_ROLE = keccak256("PENALTY_SETTER_ROLE");
+    bytes32 public constant PENALTY_SETTER_ROLE =
+        keccak256('PENALTY_SETTER_ROLE');
 
     // stakeable tokens
     address[] stakeTokens;
@@ -66,7 +67,10 @@ contract vIDIA is AccessControlEnumerable {
     // owner only addStakeToken
 
     function setPenalty(uint256 newPenalty, address token) external {
-        require(hasRole(PENALTY_SETTER_ROLE, _msgSender()), "Must have penalty setter role");
+        require(
+            hasRole(PENALTY_SETTER_ROLE, _msgSender()),
+            'Must have penalty setter role'
+        );
         tokenConfigurations[token].penalty = newPenalty;
     }
 
