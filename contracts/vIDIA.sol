@@ -50,6 +50,7 @@ contract vIDIA is AccessControlEnumerable {
 
     constructor() {
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
+        _setupRole(DELAY_SETTER_ROLE, msg.sender);
     }
 
     function stake(uint256 amount) public returns (uint256) {
@@ -78,7 +79,7 @@ contract vIDIA is AccessControlEnumerable {
 
     function setUnvestingDelay(uint24 newDelay, address token) external {
         require(
-            hasRole(PENALTY_SETTER_ROLE, _msgSender()),
+            hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
         tokenConfigurations[token].unvestingDelay = newDelay;
