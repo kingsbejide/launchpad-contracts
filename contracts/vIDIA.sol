@@ -3,8 +3,14 @@ pragma solidity ^0.8.4;
 
 import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+<<<<<<< HEAD
 
 contract vIDIA is GenericToken {
+=======
+import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
+
+contract vIDIA is AccessControlEnumerable {
+>>>>>>> vIDIA
     // STRUCTS
 
     // Configuration info for a stakeable token
@@ -33,10 +39,17 @@ contract vIDIA is GenericToken {
         uint256 totalStakers;
     }
 
+<<<<<<< HEAD
     struct UnstakeStats {
         uint256 unstakedAmount;
         uint256 unstakedAt;
     }
+=======
+    bytes32 public constant PENALTY_SETTER_ROLE =
+        keccak256('PENALTY_SETTER_ROLE');
+
+    bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
+>>>>>>> vIDIA
 
     // stakeable tokens
     address[] stakeTokens;
@@ -53,6 +66,7 @@ contract vIDIA is GenericToken {
     // user address => token addr => unstake info
     mapping(address => mapping(address => UnstakeStats)) public unstakeTokenStats;
 
+<<<<<<< HEAD
     // Events
     
     event Stake(address _from, uint256 amount, address token);
@@ -72,6 +86,11 @@ contract vIDIA is GenericToken {
 
 
         emit Stake(msg.sender, amount, token);
+    }
+
+    constructor() {
+        _setupRole(PENALTY_SETTER_ROLE, msg.sender);
+        _setupRole(DELAY_SETTER_ROLE, msg.sender);
     }
 
     // function stakeOf(address staker, address token)  public view returns(uint256) {
@@ -172,7 +191,23 @@ contract vIDIA is GenericToken {
 
     // owner only addStakeToken
 
+
     // owner only setStakeTokenUnvestingDelay
     // owner only setStakeTokenPenalty
     // owner only setStakeTokenEnabled
+    function setPenalty(uint256 newPenalty, address token) external {
+        require(
+            hasRole(PENALTY_SETTER_ROLE, _msgSender()),
+            'Must have penalty setter role'
+        );
+        tokenConfigurations[token].penalty = newPenalty;
+    }
+
+    function setUnvestingDelay(uint24 newDelay, address token) external {
+        require(
+            hasRole(DELAY_SETTER_ROLE, _msgSender()),
+            'Must have delay setter role'
+        );
+        tokenConfigurations[token].unvestingDelay = newDelay;
+    }
 }
