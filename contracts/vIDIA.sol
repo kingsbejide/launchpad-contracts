@@ -20,6 +20,7 @@ contract vIDIA is AccessControlEnumerable {
 
     struct UserInfo {
         uint256 owedReward;
+        uint256 unvestAt;
     }
 
     struct StakeTokenStats {
@@ -45,6 +46,7 @@ contract vIDIA is AccessControlEnumerable {
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
     // todo: events
+    event ClaimReward(address _from, uint256 amount, address token);
 
     constructor() {
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
@@ -62,7 +64,26 @@ contract vIDIA is AccessControlEnumerable {
 
     function immediateClaim() public {}
 
-    function claimReward() public {}
+    // claim reward and reset the user's ratio with current globalRatio
+    function claimReward(address token) public {
+        uint256 reward = userInfo[msg.sender][token].owedReward;
+        require(
+            block.timestamp < userInfo[msg.sender][token].unvestAt,
+            'User finished unvesting period'
+        );
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for claiming reward'
+        );
+        require(reward <= 0, 'No reward to claim');
+
+        // return the reward to user
+        // console.log(globalRatio);
+        userInfo[msg.sender][token].owedReward = 0;
+        // transfer(msg.sender, reward);
+
+        emit ClaimReward(msg.sender, reward, token);
+    }
 
     // owner only addStakeToken
 
