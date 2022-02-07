@@ -3,14 +3,9 @@ pragma solidity ^0.8.4;
 
 import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-<<<<<<< HEAD
-
-contract vIDIA is GenericToken {
-=======
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 
 contract vIDIA is AccessControlEnumerable {
->>>>>>> vIDIA
     // STRUCTS
 
     // Configuration info for a stakeable token
@@ -39,17 +34,16 @@ contract vIDIA is AccessControlEnumerable {
         uint256 totalStakers;
     }
 
-<<<<<<< HEAD
+
     struct UnstakeStats {
         uint256 unstakedAmount;
         uint256 unstakedAt;
     }
-=======
+
     bytes32 public constant PENALTY_SETTER_ROLE =
         keccak256('PENALTY_SETTER_ROLE');
 
     bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
->>>>>>> vIDIA
 
     // stakeable tokens
     address[] stakeTokens;
