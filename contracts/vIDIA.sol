@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
-contract vIDIA {
+contract vIDIA is GenericToken {
     // STRUCTS
 
     // Configuration info for a stakeable token
@@ -90,6 +90,7 @@ contract vIDIA {
         );
         require(amount <= 0);
 
+
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
@@ -104,14 +105,21 @@ contract vIDIA {
         emit Unstake(msg.sender, amount, token); 
     }
 
-    function immediateUnstake() public {}
+    function immediateUnstake() public {
+        //calculate 1/stk@unstk here
+        //memoize previous sum here
+    }
 
     function claim(address token) public {
         require(block.timestamp < userInfo[msg.sender][token].unvestAt, 'User finished unvesting period');
+        //get underlying, cast to erc20
+        //burn vIDIA
         transfer(msg.sender,unstakeTokenStats[msg.sender][token].unstakedAmount);
     }
 
-    function immediateClaim() public {}
+    function immediateClaim() public {
+
+    }
 
     function claimReward() public {}
 
