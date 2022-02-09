@@ -32,6 +32,7 @@ contract vIDIA is AccessControlEnumerable {
         uint256 totalStakedAmount;
         uint256 totalUnstakedAmount;
         uint256 totalStakers;
+        uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
     }
 
 
@@ -44,6 +45,9 @@ contract vIDIA is AccessControlEnumerable {
         keccak256('PENALTY_SETTER_ROLE');
 
     bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
+
+    uint256 public constant FEE_SIZE = 10;
+
 
     // stakeable tokens
     address[] stakeTokens;
@@ -60,7 +64,6 @@ contract vIDIA is AccessControlEnumerable {
     // user address => token addr => unstake info
     mapping(address => mapping(address => UnstakeStats)) public unstakeTokenStats;
 
-<<<<<<< HEAD
     // Events
     
     event Stake(address _from, uint256 amount, address token);
@@ -77,6 +80,7 @@ contract vIDIA is AccessControlEnumerable {
 
         tokenStats[token].totalStakedAmount += amount;
         userInfo[msg.sender][token].stakedAmount += amount;
+        //mint vIDIA 
 
 
         emit Stake(msg.sender, amount, token);
@@ -96,6 +100,13 @@ contract vIDIA is AccessControlEnumerable {
     //     return
     // }
 
+    function calculateUserReward(address token) public {
+        //calculates how much user a reward is owed and returns this amount
+        //PREV + 1/Total Staked 
+        //FEE_SIZE * userInfo[msg.sender][token].stakedAmount * totalStakeSum
+        return FEE_SIZE * userInfo[msg.sender][token].stakedAmount * StakeTokenStats[token].rewardSum;
+    }
+
     function unstake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
@@ -114,6 +125,10 @@ contract vIDIA is AccessControlEnumerable {
             
         
         userInfo[msg.sender][token].unstakes[unvestAt] = amount;
+
+        //PREV + (1/Total_stake_x)
+
+
         
         emit Unstake(msg.sender, amount, token); 
     }
@@ -126,8 +141,12 @@ contract vIDIA is AccessControlEnumerable {
     function claim(address token) public {
         require(block.timestamp < userInfo[msg.sender][token].unvestAt, 'User finished unvesting period');
         //get underlying, cast to erc20
-        //burn vIDIA
-        transfer(msg.sender,unstakeTokenStats[msg.sender][token].unstakedAmount);
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(_msgSender(), unstakeTokenStats[msg.sender][token].unstakedAmount);
+        //TODO: burn vIDIA
+        
+
+
     }
 
     function immediateClaim() public {
