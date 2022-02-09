@@ -70,13 +70,14 @@ contract vIDIA is AccessControlEnumerable {
 
     event Unstake(address _from, uint256 amount, address token);
 
+    event ImmediateUnstake(address _from, uint256 amount, address token);
+
 
     function stake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
             'Invalid token for staking'
-        );
-        require(amount <= 0);
+        )
 
         tokenStats[token].totalStakedAmount += amount;
         userInfo[msg.sender][token].stakedAmount += amount;
@@ -104,7 +105,7 @@ contract vIDIA is AccessControlEnumerable {
         //calculates how much user a reward is owed and returns this amount
         //PREV + 1/Total Staked 
         //FEE_SIZE * userInfo[msg.sender][token].stakedAmount * totalStakeSum
-        return FEE_SIZE * userInfo[msg.sender][token].stakedAmount * StakeTokenStats[token].rewardSum;
+        return FEE_SIZE * userInfo[msg.sender][token].stakedAmount * tokenStats[token].rewardSum;
     }
 
     function unstake(uint256 amount, address token) public {
@@ -112,7 +113,6 @@ contract vIDIA is AccessControlEnumerable {
             tokenConfigurations[token].enabled,
             'Invalid token for staking'
         );
-        require(amount <= 0);
 
 
         tokenStats[token].totalStakedAmount -= amount;
@@ -126,16 +126,23 @@ contract vIDIA is AccessControlEnumerable {
         
         userInfo[msg.sender][token].unstakes[unvestAt] = amount;
 
-        //PREV + (1/Total_stake_x)
-
-
         
         emit Unstake(msg.sender, amount, token); 
     }
 
     function immediateUnstake() public {
-        //calculate 1/stk@unstk here
-        //memoize previous sum here
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        tokenStats[token].totalStakedAmount -= amount;
+        userInfo[msg.sender][token].stakedAmount -= amount;
+        
+        //update rewardSum
+        tokenStats[token].rewardSum += 1/(tokenStats[token].totalStakeAmount);
+
+        emit ImmediateUnstake(msg.sender, amount, token); 
+
     }
 
     function claim(address token) public {
@@ -150,7 +157,7 @@ contract vIDIA is AccessControlEnumerable {
     }
 
     function immediateClaim() public {
-
+        
     }
 
     function claimReward() public {}
