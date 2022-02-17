@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 import '../library/IFTokenStandard.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
@@ -87,6 +87,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
+    event ClaimReward(address _from, uint256 amount, address token);
+
     function stake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
@@ -96,12 +98,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         tokenStats[token].totalStakedAmount += amount;
         userInfo[msg.sender][token].stakedAmount += amount;
         //mint vIDIA
-        _mint(msg.sender,amount);
+        _mint(msg.sender, amount);
 
         emit Stake(msg.sender, amount, token);
     }
 
-    constructor(string memory _name, string memory _symbol, address admin) AccessControlEnumerable() IFTokenStandard(_name,_symbol,admin)  {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address admin
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin) {
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
@@ -185,7 +191,26 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     // }
 
-    function claimReward() public {}
+    // claim reward and reset the user's ratio with current globalRatio
+    function claimReward(address token) public {
+        uint256 reward = userInfo[msg.sender][token].owedReward;
+        require(
+            block.timestamp < userInfo[msg.sender][token].unvestAt,
+            'User finished unvesting period'
+        );
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for claiming reward'
+        );
+        require(reward <= 0, 'No reward to claim');
+        userInfo[msg.sender][token].owedReward = 0;
+
+        // transfer reward to user
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(_msgSender(), reward);
+
+        emit ClaimReward(msg.sender, reward, token);
+    }
 
     //whitelist
 
