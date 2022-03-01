@@ -23,12 +23,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     struct UserInfo {
-        uint256 owedReward;
         uint256 stakedAmount;
         uint256 unvestAt;
-        //keep track of each user unstake amount
-        // uint256[] unstakes;
-        //mapping of unstake timestamp to unstake amount to keep track of multiple unstakes by same user
+        uint256 unstakedAmount;
+        uint256 unstakedAt;
     }
 
     struct StakeTokenStats {
@@ -37,11 +35,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 totalUnstakedAmount;
         uint256 totalStakers;
         uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
-    }
-
-    struct UnstakeStats {
-        uint256 unstakedAmount;
-        uint256 unstakedAt;
     }
 
     bytes32 public constant PENALTY_SETTER_ROLE =
@@ -57,8 +50,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     bytes32 public whitelistRootHash;
 
-    // uint256 public constant FEE_SIZE = 10;
-
     // stakeable tokens
     address[] stakeTokens;
 
@@ -71,9 +62,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
-    // user address => token addr => unstake info
-    mapping(address => mapping(address => UnstakeStats))
-        public unstakeTokenStats;
 
     // Events
 
@@ -130,16 +118,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             tokenConfigurations[token].enabled,
             'Invalid token for staking'
         );
+        require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
+        require(userInfo[msg.sender][token].unvestAt == 0,'User has no tokens unstaking');
 
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
         uint256 unvestAt = block.timestamp +
             tokenConfigurations[token].unvestingDelay;
-        //store earliest unvest here?
         userInfo[msg.sender][token].unvestAt = unvestAt;
-
-        // userInfo[msg.sender][token].unstakes[unvestAt] = amount;
+        userInfo[msg.sender][token].unstakedAmount = amount;
 
         emit Unstake(msg.sender, amount, token);
     }
@@ -156,12 +144,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         //takes into account into penalty
 
         //update rewardSum
-        uint256 penalty = amount / 10;
         tokenStats[token].rewardSum +=
             (1 / (tokenStats[token].totalStakedAmount)) *
-            penalty;
+            tokenConfigurations[token].penalty;
 
-        //transfer IDIA back
 
         emit ImmediateUnstake(msg.sender, amount, token);
     }
@@ -175,10 +161,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
             _msgSender(),
-            unstakeTokenStats[msg.sender][token].unstakedAmount
+            userInfo[msg.sender][token].unstakedAmount
         );
-        //TODO: burn vIDIA
-        burn(unstakeTokenStats[msg.sender][token].unstakedAmount);
+        burn(userInfo[msg.sender][token].unstakedAmount);
+        tokenStats[token].accumulatedPenalty += userInfo[msg.sender][token].unstakedAmount;
+
+        userInfo[msg.sender][token].unvestAt = 0;
+        userInfo[msg.sender][token].unstakedAmount = 0;
     }
 
     // function immediateClaim() public {
