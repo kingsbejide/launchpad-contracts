@@ -98,15 +98,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
     }
 
-    // function stakeOf(address staker, address token)  public view returns(uint256) {
-    //     return
-    // }
-
-    // returns pending staking rewards to user
-    // function pendingRewards(address staker) public view returns(uint256) {
-    //     return
-    // }
-
     function calculateUserReward(address token) public returns (uint256) {
         //calculates how much user a reward is owed and returns this amount
         //PREV + 1/Total Staked
@@ -148,7 +139,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         //based on how much time you have left to unvest
         //takes into account into penalty
-
         //update rewardSum
         tokenStats[token].rewardSum +=
             (1 / (tokenStats[token].totalStakedAmount)) *
