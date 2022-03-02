@@ -26,7 +26,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 stakedAmount;
         uint256 unvestAt;
         uint256 unstakedAmount;
-        uint256 unstakedAt;
     }
 
     struct StakeTokenStats {
@@ -49,9 +48,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     address public whitelistSetter;
 
     bytes32 public whitelistRootHash;
-
-    // stakeable tokens
-    address[] stakeTokens;
 
     // token address => token config
     mapping(address => StakeTokenConfig) public tokenConfigurations;
@@ -85,6 +81,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[msg.sender][token].stakedAmount += amount;
         //mint vIDIA
         _mint(msg.sender,amount);
+        claimReward(token);
 
         emit Stake(msg.sender, amount, token);
     }
@@ -128,7 +125,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             tokenConfigurations[token].unvestingDelay;
         userInfo[msg.sender][token].unvestAt = unvestAt;
         userInfo[msg.sender][token].unstakedAmount = amount;
-
+        claimReward(token);
         emit Unstake(msg.sender, amount, token);
     }
 
@@ -148,6 +145,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             (1 / (tokenStats[token].totalStakedAmount)) *
             tokenConfigurations[token].penalty;
 
+         claimReward(token);
+
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(
+            _msgSender(),
+            amount
+        );
+        burn(amount);
 
         emit ImmediateUnstake(msg.sender, amount, token);
     }
@@ -164,7 +169,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             userInfo[msg.sender][token].unstakedAmount
         );
         burn(userInfo[msg.sender][token].unstakedAmount);
-        tokenStats[token].accumulatedPenalty += userInfo[msg.sender][token].unstakedAmount;
+        //tax not 
 
         userInfo[msg.sender][token].unvestAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
@@ -174,7 +179,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     // }
 
-    function claimReward() public {}
+    function claimReward(address token) public {}
 
     //whitelist
 
