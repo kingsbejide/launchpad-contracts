@@ -193,17 +193,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     // claim reward and reset the user's ratio with current globalRatio
     function claimReward(address token) public {
-        uint256 reward = userInfo[msg.sender][token].owedReward;
-        require(
-            block.timestamp < userInfo[msg.sender][token].unvestAt,
-            'User finished unvesting period'
-        );
         require(
             tokenConfigurations[token].enabled,
             'Invalid token for claiming reward'
         );
+        uint256 reward = calculateUserReward(token);
         require(reward <= 0, 'No reward to claim');
-        userInfo[msg.sender][token].owedReward = 0;
 
         // transfer reward to user
         ERC20 claimedTokens = ERC20(token);
