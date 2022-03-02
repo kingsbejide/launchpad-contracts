@@ -71,6 +71,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
+    event Claim(address _from, address token);
+
+    event ImmediateClaim(address _from, address token);
+
+    event ClaimReward(address _from, address token);
+
     function stake(uint256 amount, address token) public {
         require(
             tokenConfigurations[token].enabled,
@@ -179,6 +185,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         userInfo[msg.sender][token].unstakeAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
+
+        emit Claim(msg.sender,token);
     }
 
     function immediateClaim(address token) public {
@@ -209,14 +217,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         burn(amount);
 
+        emit ImmediateClaim(msg.sender,token);
 
 
     }
 
     function claimReward(address token) public {}
-
-    //whitelist
-
     // Function for owner to set an optional, separate whitelist setter
     function setWhitelistSetter(address _whitelistSetter) external {
         require(
@@ -228,6 +234,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         // emit
         emit SetWhitelistSetter(_whitelistSetter);
+        
+        emit ClaimReward(msg.sender,token);
     }
 
     // Function for owner or whitelist setter to set a whitelist; if not set, then everyone allowed
