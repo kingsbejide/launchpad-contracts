@@ -5,13 +5,14 @@ import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 
-contract vIDIA is AccessControlEnumerable {
+contract vIDIA is AccessControlEnumerable, IFTokenStandard {
+    using SafeERC20 for ERC20;
     // STRUCTS
 
     // Configuration info for a stakeable token
     struct StakeTokenConfig {
         // delay for unvesting token
-        uint24 unvestingDelay;
+        uint24 unstakingDelay;
         // constant penalty for early unvesting
         uint256 penalty;
         // if token is enabled for staking
@@ -19,7 +20,9 @@ contract vIDIA is AccessControlEnumerable {
     }
 
     struct UserInfo {
-        uint256 owedReward;
+        uint256 stakedAmount;
+        uint256 unstakeAt; // ch
+        uint256 unstakedAmount;
     }
 
     struct StakeTokenStats {
@@ -27,6 +30,7 @@ contract vIDIA is AccessControlEnumerable {
         uint256 totalStakedAmount;
         uint256 totalUnstakedAmount;
         uint256 totalStakers;
+        uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
     }
 
     bytes32 public constant PENALTY_SETTER_ROLE =
@@ -34,8 +38,13 @@ contract vIDIA is AccessControlEnumerable {
 
     bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
 
-    // stakeable tokens
-    address[] stakeTokens;
+    bytes32 public constant WHITELIST_SETTER_ROLE =
+        keccak256('WHITELIST_SETTER_ROLE');
+
+    // optional whitelist setter (settable by owner)
+    address public whitelistSetter;
+
+    bytes32 public whitelistRootHash;
 
     // token address => token config
     mapping(address => StakeTokenConfig) public tokenConfigurations;
