@@ -15,7 +15,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // Configuration info for a stakeable token
     struct StakeTokenConfig {
         // delay for unvesting token
-        uint24 unvestingDelay;
+        uint24 unstakingDelay;
         // constant penalty for early unvesting
         uint256 penalty;
         // if token is enabled for staking
@@ -122,7 +122,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
         uint256 unstakeAt = block.timestamp +
-            tokenConfigurations[token].unvestingDelay;
+            tokenConfigurations[token].unstakingDelay;
         userInfo[msg.sender][token].unstakeAt = unstakeAt;
         userInfo[msg.sender][token].unstakedAmount = amount;
         claimReward(token);
@@ -167,6 +167,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             block.timestamp < userInfo[msg.sender][token].unstakeAt,
             'User finished unvesting period'
         );
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking')
         //get underlying, cast to erc20
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
