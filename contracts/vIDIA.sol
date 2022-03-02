@@ -24,7 +24,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     struct UserInfo {
         uint256 stakedAmount;
-        uint256 unvestAt;
+        uint256 unstakeAt; // ch
         uint256 unstakedAmount;
     }
 
@@ -116,14 +116,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Invalid token for staking'
         );
         require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
-        require(userInfo[msg.sender][token].unvestAt == 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakeAt == 0,'User has no tokens unstaking');
 
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
         //start unvesting period
-        uint256 unvestAt = block.timestamp +
+        uint256 unstakeAt = block.timestamp +
             tokenConfigurations[token].unvestingDelay;
-        userInfo[msg.sender][token].unvestAt = unvestAt;
+        userInfo[msg.sender][token].unstakeAt = unstakeAt;
         userInfo[msg.sender][token].unstakedAmount = amount;
         claimReward(token);
         emit Unstake(msg.sender, amount, token);
@@ -134,6 +134,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             tokenConfigurations[token].enabled,
             'Invalid token for staking'
         );
+        require(userInfo[msg.sender][token].unstakeAt == 0,'User has currently pending unstake');
+        require(userInfo[msg.sender][token].unstakedAmount == 0,'User has tokens currently pending unstake');
+
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
 
@@ -145,12 +148,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             (1 / (tokenStats[token].totalStakedAmount)) *
             tokenConfigurations[token].penalty;
 
+        uint256 penalty = amount  * tokenConfigurations[token].penalty;
+        tokenStats[token].accumulatedPenalty += penalty;
          claimReward(token);
 
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
             _msgSender(),
-            amount
+            amount - penalty
         );
         burn(amount);
 
@@ -159,7 +164,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     function claim(address token) public {
         require(
-            block.timestamp < userInfo[msg.sender][token].unvestAt,
+            block.timestamp < userInfo[msg.sender][token].unstakeAt,
             'User finished unvesting period'
         );
         //get underlying, cast to erc20
@@ -171,7 +176,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         burn(userInfo[msg.sender][token].unstakedAmount);
         //tax not 
 
-        userInfo[msg.sender][token].unvestAt = 0;
+        userInfo[msg.sender][token].unstakeAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
     }
 
