@@ -21,7 +21,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     struct UserInfo {
         uint256 stakedAmount;
-        uint256 unstakeAt; // ch
+        uint256 unstakeAt; 
         uint256 unstakedAmount;
     }
 
@@ -55,28 +55,86 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
-    // todo: events
+    // Events
 
-    constructor() {
+    event Stake(address _from, uint256 amount, address token);
+
+    event Unstake(address _from, uint256 amount, address token);
+
+    event ImmediateUnstake(address _from, uint256 amount, address token);
+
+    event SetWhitelistSetter(address whitelistSetter);
+
+    event SetWhitelist(bytes32 whitelistRootHash);
+
+    event Claim(address _from, address token);
+
+    event ImmediateClaim(address _from, address token);
+
+    event ClaimReward(address _from, address token);
+
+    constructor(string memory _name, string memory _symbol, address admin) AccessControlEnumerable() IFTokenStandard(_name,_symbol,admin)  {
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
+        _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
     }
 
-    function stake(uint256 amount) public returns (uint256) {
-        // todo: sure to prevent staking non stakeable
-        console.log(amount);
-        return amount;
+
+    function stake(uint256 amount, address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+
+        emit Stake(msg.sender, amount, token);
     }
 
-    function unstake() public {}
+       function unstake(uint256 amount, address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
+        require(userInfo[msg.sender][token].unstakeAt == 0,'User has no tokens unstaking');
 
-    function claim() public {}
+        emit Unstake(msg.sender, amount, token);
+    }
 
-    function immediateClaim() public {}
+     function immediateUnstake(uint256 amount, address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        require(userInfo[msg.sender][token].unstakeAt == 0,'User has currently pending unstake');
+        require(userInfo[msg.sender][token].unstakedAmount == 0,'User has tokens currently pending unstake');
+
+        emit ImmediateUnstake(msg.sender, amount, token);
+    }
+
+        function claim(address token) public {
+        require(
+            block.timestamp < userInfo[msg.sender][token].unstakeAt,
+            'User finished unvesting period'
+        );
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking')
+
+        emit Claim(msg.sender,token);
+    }
+
+     function immediateClaim(address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        // user needs to have tokens curently unstaking
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
+
+        emit ImmediateClaim(msg.sender,token);
+    }
 
     function claimReward() public {}
 
-    // owner only addStakeToken
 
     function setPenalty(uint256 newPenalty, address token) external {
         require(
