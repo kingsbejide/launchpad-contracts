@@ -24,7 +24,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     struct UserInfo {
         uint256 stakedAmount;
-        uint256 unstakeAt; // ch
+        uint256 unstakeAt;
         uint256 unstakedAmount;
     }
 
@@ -181,9 +181,37 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[msg.sender][token].unstakedAmount = 0;
     }
 
-    // function immediateClaim() public {
+    function immediateClaim(address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        // user needs to have tokens curently unstaking
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
 
-    // }
+        tokenStats[token].totalStakedAmount -= userInfo[token].unstakedAmount;
+        userInfo[msg.sender][token].stakedAmount -= userInfo[token].unstakedAmount;
+
+        //update rewardSum
+        tokenStats[token].rewardSum +=
+            (1 / (tokenStats[token].totalStakedAmount)) *
+            tokenConfigurations[token].penalty;
+
+        uint256 penalty = amount  * tokenConfigurations[token].penalty;
+        tokenStats[token].accumulatedPenalty += penalty;
+         claimReward(token);
+
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(
+            _msgSender(),
+            userInfo[token].unstakedAmount - penalty
+        );
+        burn(amount);
+
+
+
+    }
 
     function claimReward(address token) public {}
 
