@@ -81,55 +81,22 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
 
     function stake(uint256 amount, address token) public {
-        require(
-            tokenConfigurations[token].enabled,
-            'Invalid token for staking'
-        );
-
         emit Stake(msg.sender, amount, token);
     }
 
        function unstake(uint256 amount, address token) public {
-        require(
-            tokenConfigurations[token].enabled,
-            'Invalid token for staking'
-        );
-        require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
-        require(userInfo[msg.sender][token].unstakeAt == 0,'User has no tokens unstaking');
-
         emit Unstake(msg.sender, amount, token);
     }
 
      function immediateUnstake(uint256 amount, address token) public {
-        require(
-            tokenConfigurations[token].enabled,
-            'Invalid token for staking'
-        );
-        require(userInfo[msg.sender][token].unstakeAt == 0,'User has currently pending unstake');
-        require(userInfo[msg.sender][token].unstakedAmount == 0,'User has tokens currently pending unstake');
-
         emit ImmediateUnstake(msg.sender, amount, token);
     }
 
         function claim(address token) public {
-        require(
-            block.timestamp < userInfo[msg.sender][token].unstakeAt,
-            'User finished unvesting period'
-        );
-        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking')
-
         emit Claim(msg.sender,token);
     }
 
      function immediateClaim(address token) public {
-        require(
-            tokenConfigurations[token].enabled,
-            'Invalid token for staking'
-        );
-        // user needs to have tokens curently unstaking
-        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
-        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
-
         emit ImmediateClaim(msg.sender,token);
     }
 
