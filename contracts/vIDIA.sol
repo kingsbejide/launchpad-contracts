@@ -21,7 +21,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     struct UserInfo {
         uint256 stakedAmount;
-        uint256 unstakeAt; 
+        uint256 unstakeAt;
         uint256 unstakedAmount;
     }
 
@@ -73,35 +73,37 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ClaimReward(address _from, address token);
 
-    constructor(string memory _name, string memory _symbol, address admin) AccessControlEnumerable() IFTokenStandard(_name,_symbol,admin)  {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address admin
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin) {
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
     }
 
-
     function stake(uint256 amount, address token) public {
         emit Stake(msg.sender, amount, token);
     }
 
-       function unstake(uint256 amount, address token) public {
+    function unstake(uint256 amount, address token) public {
         emit Unstake(msg.sender, amount, token);
     }
 
-     function immediateUnstake(uint256 amount, address token) public {
+    function immediateUnstake(uint256 amount, address token) public {
         emit ImmediateUnstake(msg.sender, amount, token);
     }
 
-        function claim(address token) public {
-        emit Claim(msg.sender,token);
+    function claim(address token) public {
+        emit Claim(msg.sender, token);
     }
 
-     function immediateClaim(address token) public {
-        emit ImmediateClaim(msg.sender,token);
+    function immediateClaim(address token) public {
+        emit ImmediateClaim(msg.sender, token);
     }
 
     function claimReward() public {}
-
 
     function setPenalty(uint256 newPenalty, address token) external {
         require(
@@ -118,9 +120,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         tokenConfigurations[token].unvestingDelay = newDelay;
     }
-}
 
-  //// EIP2771 meta transactions
+    //// EIP2771 meta transactions
 
     function _msgSender()
         internal
