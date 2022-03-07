@@ -24,7 +24,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     struct UserInfo {
         uint256 stakedAmount;
-        uint256 unstakeAt; // ch
+        uint256 unstakeAt;
         uint256 unstakedAmount;
     }
 
@@ -71,6 +71,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
+    event Claim(address _from, address token);
+
+    event ImmediateClaim(address _from, address token);
+
     event ClaimReward(address _from, uint256 amount, address token);
 
     function stake(uint256 amount, address token) public {
@@ -97,15 +101,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
     }
-
-    // function stakeOf(address staker, address token)  public view returns(uint256) {
-    //     return
-    // }
-
-    // returns pending staking rewards to user
-    // function pendingRewards(address staker) public view returns(uint256) {
-    //     return
-    // }
 
     function calculateUserReward(address token) public returns (uint256) {
         //calculates how much user a reward is owed and returns this amount
@@ -148,7 +143,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         //based on how much time you have left to unvest
         //takes into account into penalty
-
         //update rewardSum
         tokenStats[token].rewardSum +=
             (1 / (tokenStats[token].totalStakedAmount)) *
@@ -185,11 +179,42 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         userInfo[msg.sender][token].unstakeAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
+
+        emit Claim(msg.sender,token);
     }
 
-    // function immediateClaim() public {
+    function immediateClaim(address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for staking'
+        );
+        // user needs to have tokens curently unstaking
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
 
-    // }
+        tokenStats[token].totalStakedAmount -= userInfo[token].unstakedAmount;
+        userInfo[msg.sender][token].stakedAmount -= userInfo[token].unstakedAmount;
+
+        //update rewardSum
+        tokenStats[token].rewardSum +=
+            (1 / (tokenStats[token].totalStakedAmount)) *
+            tokenConfigurations[token].penalty;
+
+        uint256 penalty = amount  * tokenConfigurations[token].penalty;
+        tokenStats[token].accumulatedPenalty += penalty;
+         claimReward(token);
+
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(
+            _msgSender(),
+            userInfo[token].unstakedAmount - penalty
+        );
+        burn(amount);
+
+        emit ImmediateClaim(msg.sender,token);
+
+
+    }
 
     // claim reward and reset the user's ratio with current globalRatio
     function claimReward(address token) public {
@@ -207,8 +232,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit ClaimReward(msg.sender, reward, token);
     }
 
-    //whitelist
-
     // Function for owner to set an optional, separate whitelist setter
     function setWhitelistSetter(address _whitelistSetter) external {
         require(
@@ -220,6 +243,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         // emit
         emit SetWhitelistSetter(_whitelistSetter);
+        
+        emit ClaimReward(msg.sender,token);
     }
 
     // Function for owner or whitelist setter to set a whitelist; if not set, then everyone allowed
