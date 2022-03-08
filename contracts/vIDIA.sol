@@ -18,6 +18,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint24 unstakingDelay;
         // constant penalty for early unvesting
         uint256 penalty;
+        // constant penalty for cancellation
+        uint256 cancelPenalty
         // if token is enabled for staking
         bool enabled;
     }
@@ -26,6 +28,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 stakedAmount;
         uint256 unstakeAt;
         uint256 unstakedAmount;
+        uint256 lastRewardSum;
     }
 
     struct StakeTokenStats {
@@ -104,7 +107,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         //FEE_SIZE * userInfo[msg.sender][token].stakedAmount * totalStakeSum
         return
             userInfo[msg.sender][token].stakedAmount *
-            tokenStats[token].rewardSum;
+            (tokenStats[token].rewardSum - userInfo[msg.sender][token].lastRewardSum)
     }
 
     function unstake(uint256 amount, address token) public {
@@ -114,6 +117,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
         require(userInfo[msg.sender][token].unstakeAt == 0,'User has no tokens unstaking');
+        require(amount <= userInfo[msg.sender][token].stakedAmount, 'User cannot unstake more tokens than they staked');
 
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
@@ -122,6 +126,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             tokenConfigurations[token].unstakingDelay;
         userInfo[msg.sender][token].unstakeAt = unstakeAt;
         userInfo[msg.sender][token].unstakedAmount = amount;
+        burn(userInfo[msg.sender][token].unstakedAmount);
         claimReward(token);
         emit Unstake(msg.sender, amount, token);
     }
@@ -133,6 +138,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(userInfo[msg.sender][token].unstakeAt == 0,'User has currently pending unstake');
         require(userInfo[msg.sender][token].unstakedAmount == 0,'User has tokens currently pending unstake');
+        require(amount <= userInfo[msg.sender][token].stakedAmount, 'User cannot unstake more tokens than they staked');
 
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
@@ -170,7 +176,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             _msgSender(),
             userInfo[msg.sender][token].unstakedAmount
         );
-        burn(userInfo[msg.sender][token].unstakedAmount);
+
         //tax not 
 
         userInfo[msg.sender][token].unstakeAt = 0;
@@ -208,6 +214,33 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         burn(amount);
 
         emit ImmediateClaim(msg.sender,token);
+
+
+    }
+
+    function cancelUnstake(address token) public {
+               // user needs to have tokens curently unstaking
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
+
+                tokenStats[token].rewardSum +=
+            (1 / (tokenStats[token].totalStakedAmount)) *
+            tokenConfigurations[token].cancelPenalty;
+
+        uint256 penalty = amount  * tokenConfigurations[token].cancelPenalty;
+        tokenStats[token].accumulatedPenalty += cancelPenalty;
+         claimReward(token);
+
+        
+        tokenStats[token].totalStakedAmount += userInfo[token].unstakedAmount - penalty;
+        userInfo[msg.sender][token].stakedAmount += userInfo[token].unstakedAmount - penalty ;
+
+        //vIDIA not IDIA given back to user
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(
+            _msgSender(),
+            userInfo[token].unstakedAmount - cancelPenalty
+        );
 
 
     }
@@ -284,6 +317,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Must have penalty setter role'
         );
         tokenConfigurations[token].penalty = newPenalty;
+    }
+
+    function setCancelPenalty(uint256 newPenalty, address token) external {
+        require(
+            hasRole(PENALTY_SETTER_ROLE, _msgSender()),
+            'Must have penalty setter role'
+        );
+        tokenConfigurations[token].cancelPenalty = newPenalty;
     }
 
     function setUnvestingDelay(uint24 newDelay, address token) external {
