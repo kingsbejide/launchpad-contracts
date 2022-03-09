@@ -249,7 +249,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     }
 
-    // claim reward and reset the user's ratio with current globalRatio
+    // claim reward and reset user's reward sum
     function claimReward(address token) public {
         require(
             tokenConfigurations[token].enabled,
@@ -257,12 +257,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         uint256 reward = calculateUserReward(token);
         require(reward <= 0, 'No reward to claim');
-
+        // reset user's rewards sum
+        userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
         // transfer reward to user
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(_msgSender(), reward);
 
-        emit ClaimReward(msg.sender, reward, token);
+        emit ClaimReward(_msgSender(), reward, token);
     }
 
     // Function for owner to set an optional, separate whitelist setter
