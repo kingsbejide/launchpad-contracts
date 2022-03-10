@@ -61,7 +61,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
-
     // Events
 
     event Stake(address _from, uint256 amount, address token);
@@ -87,10 +86,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
 
         tokenStats[token].totalStakedAmount += amount;
+        claimReward(token);
         userInfo[msg.sender][token].stakedAmount += amount;
         //mint vIDIA
         _mint(msg.sender,amount);
-        claimReward(token);
 
         emit Stake(msg.sender, amount, token);
     }
@@ -120,7 +119,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Invalid token for staking'
         );
         require(userInfo[msg.sender][token].unstakedAmount == 0,'User already has pending tokens unstaking');
-        require(userInfo[msg.sender][token].unstakeAt == 0,'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakeAt == 0,'User has pending tokens unstaking');
         require(amount <= userInfo[msg.sender][token].stakedAmount, 'User cannot unstake more tokens than they staked');
 
         tokenStats[token].totalStakedAmount -= amount;
@@ -129,11 +128,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 unstakeAt = block.timestamp +
             tokenConfigurations[token].unstakingDelay;
         userInfo[msg.sender][token].unstakeAt = unstakeAt;
+        claimReward(token);
         userInfo[msg.sender][token].unstakedAmount = amount;
         burn(userInfo[msg.sender][token].unstakedAmount);
-        claimReward(token);
+
         emit Unstake(msg.sender, amount, token);
-    }
 
     function immediateUnstake(uint256 amount, address token) public {
         require(
@@ -181,8 +180,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             userInfo[msg.sender][token].unstakedAmount
         );
 
-        //tax not 
-
         userInfo[msg.sender][token].unstakeAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
 
@@ -216,6 +213,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             userInfo[token].unstakedAmount - penalty
         );
         burn(amount);
+        userInfo[msg.sender][token].unstakedAmount = 0
+        userInfo[msg.sender][token].unstakedAt = 0
+
 
         emit ImmediateClaim(msg.sender,token);
 
@@ -234,6 +234,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 penalty = amount  * tokenConfigurations[token].cancelPenalty;
         tokenStats[token].accumulatedPenalty += cancelPenalty;
          claimReward(token);
+        userInfo[msg.sender][token].unstakedAmount = 0
+        userInfo[msg.sender][token].unstakedAt = 0
+
 
         
         tokenStats[token].totalStakedAmount += userInfo[token].unstakedAmount - penalty;
@@ -277,8 +280,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         // emit
         emit SetWhitelistSetter(_whitelistSetter);
-        
-        emit ClaimReward(msg.sender,token);
     }
 
     // Function for owner or whitelist setter to set a whitelist; if not set, then everyone allowed
@@ -326,11 +327,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return MerkleProof.verify(merkleProof, whitelistRootHash, leaf);
     }
 
-    // owner only addStakeToken
-
-    // owner only setStakeTokenUnvestingDelay
-    // owner only setStakeTokenPenalty
-    // owner only setStakeTokenEnabled
     function setPenalty(uint256 newPenalty, address token) external {
         require(
             hasRole(PENALTY_SETTER_ROLE, _msgSender()),
@@ -356,38 +352,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     //// EIP2771 meta transactions
-
-    function _msgSender()
-        internal
-        view
-        override(IFTokenStandard, Context)
-        returns (address)
-    {
-        return ERC2771ContextUpdateable._msgSender();
-    }
-
-    function _msgData()
-        internal
-        view
-        override(IFTokenStandard, Context)
-        returns (bytes calldata)
-    {
-        return ERC2771ContextUpdateable._msgData();
-    }
-
-    //// EIP1363 payable token
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(AccessControlEnumerable, IFTokenStandard)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-}
-
-  //// EIP2771 meta transactions
 
     function _msgSender()
         internal
