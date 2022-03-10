@@ -61,7 +61,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
-
     // Events
 
     event Stake(address _from, uint256 amount, address token);
@@ -96,6 +95,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     constructor(string memory _name, string memory _symbol, address admin) AccessControlEnumerable() IFTokenStandard(_name,_symbol,admin)  {
+
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
@@ -130,7 +130,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         burn(userInfo[msg.sender][token].unstakedAmount);
 
         emit Unstake(msg.sender, amount, token);
-    }
 
     function immediateUnstake(uint256 amount, address token) public {
         require(
@@ -311,11 +310,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return MerkleProof.verify(merkleProof, whitelistRootHash, leaf);
     }
 
-    // owner only addStakeToken
-
-    // owner only setStakeTokenUnvestingDelay
-    // owner only setStakeTokenPenalty
-    // owner only setStakeTokenEnabled
     function setPenalty(uint256 newPenalty, address token) external {
         require(
             hasRole(PENALTY_SETTER_ROLE, _msgSender()),
@@ -341,38 +335,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     //// EIP2771 meta transactions
-
-    function _msgSender()
-        internal
-        view
-        override(IFTokenStandard, Context)
-        returns (address)
-    {
-        return ERC2771ContextUpdateable._msgSender();
-    }
-
-    function _msgData()
-        internal
-        view
-        override(IFTokenStandard, Context)
-        returns (bytes calldata)
-    {
-        return ERC2771ContextUpdateable._msgData();
-    }
-
-    //// EIP1363 payable token
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(AccessControlEnumerable, IFTokenStandard)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-}
-
-  //// EIP2771 meta transactions
 
     function _msgSender()
         internal
