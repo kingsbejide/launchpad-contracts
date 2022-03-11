@@ -71,7 +71,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ImmediateClaim(address _from, address token);
 
-    event ClaimReward(address _from, address token);
+    event ClaimReward(address _from, uint256 amount, address token);
 
     constructor(
         string memory _name,
@@ -103,7 +103,22 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit ImmediateClaim(msg.sender, token);
     }
 
-    function claimReward() public {}
+    // claim reward and reset user's reward sum
+    function claimReward(address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for claiming reward'
+        );
+        uint256 reward = calculateUserReward(token);
+        require(reward <= 0, 'No reward to claim');
+        // reset user's rewards sum
+        userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
+        // transfer reward to user
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(_msgSender(), reward);
+
+        emit ClaimReward(_msgSender(), reward, token);
+    }
 
     function setPenalty(uint256 newPenalty, address token) external {
         require(
