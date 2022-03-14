@@ -77,7 +77,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ImmediateClaim(address _from, address token);
 
-    event ClaimReward(address _from, address token);
+    event ClaimReward(address _from, uint256 amount, address token);
 
     function stake(uint256 amount, address token) public {
         require(
@@ -214,6 +214,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     }
 
+<<<<<<< HEAD
     function cancelUnstake(address token) public {
                // user needs to have tokens curently unstaking
         require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
@@ -303,6 +304,23 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         // verify merkle proof
         return MerkleProof.verify(merkleProof, whitelistRootHash, leaf);
+
+    // claim reward and reset user's reward sum
+    function claimReward(address token) public {
+        require(
+            tokenConfigurations[token].enabled,
+            'Invalid token for claiming reward'
+        );
+        uint256 reward = calculateUserReward(token);
+        require(reward <= 0, 'No reward to claim');
+        // reset user's rewards sum
+        userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
+        // transfer reward to user
+        ERC20 claimedTokens = ERC20(token);
+        claimedTokens.safeTransfer(_msgSender(), reward);
+
+        emit ClaimReward(_msgSender(), reward, token);
+
     }
 
     function setPenalty(uint256 newPenalty, address token) external {
