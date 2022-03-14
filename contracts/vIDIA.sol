@@ -192,17 +192,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
         require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
 
-        tokenStats[token].totalStakedAmount -= userInfo[token].unstakedAmount;
-        userInfo[msg.sender][token].stakedAmount -= userInfo[token].unstakedAmount;
-
         //update rewardSum
         tokenStats[token].rewardSum +=
             (1 / (tokenStats[token].totalStakedAmount)) *
             tokenConfigurations[token].penalty;
 
-        uint256 penalty = amount  * tokenConfigurations[token].penalty;
+        uint256 penalty = userInfo[token].unstakedAmount  * tokenConfigurations[token].penalty;
         tokenStats[token].accumulatedPenalty += penalty;
-         claimReward(token);
 
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
@@ -224,26 +220,26 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
         require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
 
-                tokenStats[token].rewardSum +=
+        tokenStats[token].rewardSum +=
             (1 / (tokenStats[token].totalStakedAmount)) *
             tokenConfigurations[token].cancelPenalty;
 
-        uint256 penalty = amount  * tokenConfigurations[token].cancelPenalty;
+        uint256 penalty = userInfo[msg.sender][token].unstakedAmount  * tokenConfigurations[token].cancelPenalty;
         tokenStats[token].accumulatedPenalty += cancelPenalty;
          claimReward(token);
+
+        tokenStats[token].totalStakedAmount += userInfo[token].unstakedAmount - penalty;
+        userInfo[msg.sender][token].stakedAmount += userInfo[token].unstakedAmount - penalty;
+
         userInfo[msg.sender][token].unstakedAmount = 0
         userInfo[msg.sender][token].unstakedAt = 0
 
-
-        
-        tokenStats[token].totalStakedAmount += userInfo[token].unstakedAmount - penalty;
-        userInfo[msg.sender][token].stakedAmount += userInfo[token].unstakedAmount - penalty ;
 
         //vIDIA not IDIA given back to user
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
             _msgSender(),
-            userInfo[token].unstakedAmount - cancelPenalty
+            userInfo[msg.sender][token].unstakedAmount - cancelPenalty
         );
 
 
