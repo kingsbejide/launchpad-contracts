@@ -139,7 +139,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         require(userInfo[msg.sender][token].unstakeAt == 0,'User has currently pending unstake');
         require(userInfo[msg.sender][token].unstakedAmount == 0,'User has tokens currently pending unstake');
         require(amount <= userInfo[msg.sender][token].stakedAmount, 'User cannot unstake more tokens than they staked');
-
+        claimReward(token);
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
 
@@ -152,7 +152,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         uint256 penalty = amount  * tokenConfigurations[token].penalty;
         tokenStats[token].accumulatedPenalty += penalty;
-         claimReward(token);
 
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
