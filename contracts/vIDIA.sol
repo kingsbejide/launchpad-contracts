@@ -16,10 +16,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     struct StakeTokenConfig {
         // delay for unvesting token
         uint24 unstakingDelay;
-        // constant penalty for early unvesting
+        // fee for early unvesting. Fee is expressed in basis points based on amount unstaked
         uint256 penalty;
-        // constant penalty for cancellation
-        uint256 cancelPenalty
+        // fee for cancellation. Fee is expressed in basis points based on amount currently unstaking
+        uint256 cancelPenalty;
         // if token is enabled for staking
         bool enabled;
     }
@@ -36,7 +36,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 totalStakedAmount;
         uint256 totalUnstakedAmount;
         uint256 totalStakers;
-        uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
+        uint256 rewardSum; // (A1*10**18/T1 + A2*10**18/T2 + A3*10**18/T3)
     }
 
     bytes32 public constant PENALTY_SETTER_ROLE =
@@ -46,6 +46,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     bytes32 public constant WHITELIST_SETTER_ROLE =
         keccak256('WHITELIST_SETTER_ROLE');
+
+    uint256 private constant FACTOR = 10**18;
+    uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
 
     // optional whitelist setter (settable by owner)
     address public whitelistSetter;
@@ -95,19 +98,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     constructor(string memory _name, string memory _symbol, address admin) AccessControlEnumerable() IFTokenStandard(_name,_symbol,admin)  {
-
         _setupRole(PENALTY_SETTER_ROLE, msg.sender);
         _setupRole(DELAY_SETTER_ROLE, msg.sender);
         _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
     }
 
     function calculateUserReward(address token) public returns (uint256) {
-        //calculates how much user a reward is owed and returns this amount
-        //PREV + 1/Total Staked
-        //FEE_SIZE * userInfo[msg.sender][token].stakedAmount * totalStakeSum
+        //amount * (global_reward_sum - user_reward_sum) / 10**18. perform div last to reduce truncation
         return
             userInfo[msg.sender][token].stakedAmount *
-            (tokenStats[token].rewardSum - userInfo[msg.sender][token].lastRewardSum)
+            (tokenStats[token].rewardSum - userInfo[msg.sender][token].lastRewardSum) / FACTOR;
     }
 
     function unstake(uint256 amount, address token) public {
@@ -130,6 +130,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         burn(userInfo[msg.sender][token].unstakedAmount);
 
         emit Unstake(msg.sender, amount, token);
+    }
 
     function immediateUnstake(uint256 amount, address token) public {
         require(
@@ -143,12 +144,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         tokenStats[token].totalStakedAmount -= amount;
         userInfo[msg.sender][token].stakedAmount -= amount;
 
-        //based on how much time you have left to unvest
-        //takes into account into penalty
-        //update rewardSum
-        tokenStats[token].rewardSum +=
-            (1 / (tokenStats[token].totalStakedAmount)) *
-            tokenConfigurations[token].penalty;
+        // rewardsum += (penalty_in_basis_pts / 10000) * amount_to_unstaked * 10**18 / total_staked, sort all muls to the front to reduce truncation
+        tokenStats[token].rewardSum += tokenConfigurations[token].penalty * amount * FACTOR / ONE_HUNDRED / tokenStats[token].totalStakedAmount;
 
         uint256 penalty = amount  * tokenConfigurations[token].penalty;
         tokenStats[token].accumulatedPenalty += penalty;
@@ -168,7 +165,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             block.timestamp < userInfo[msg.sender][token].unstakeAt,
             'User finished unvesting period'
         );
-        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking')
+        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
         //get underlying, cast to erc20
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
@@ -179,7 +176,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[msg.sender][token].unstakeAt = 0;
         userInfo[msg.sender][token].unstakedAmount = 0;
 
-        emit Claim(msg.sender,token);
+        emit Claim(msg.sender, token);
     }
 
     function immediateClaim(address token) public {
@@ -188,65 +185,55 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Invalid token for staking'
         );
         // user needs to have tokens curently unstaking
-        require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
-        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
+        require(userInfo[msg.sender][token].unstakedAmount != 0, 'User has no tokens unstaking');
+        require(userInfo[msg.sender][token].unstakeAt != 0, 'User has no tokens waiting to be unstaked');
 
-        //update rewardSum
-        tokenStats[token].rewardSum +=
-            (1 / (tokenStats[token].totalStakedAmount)) *
-            tokenConfigurations[token].penalty;
+        // rewardsum += (penalty_in_basis_pts / 10000) * unstaking_amount * 10**18 / total_staked, sort all muls to the front to reduce truncation
+        tokenStats[token].rewardSum += tokenConfigurations[token].penalty * userInfo[msg.sender][token].unstakedAmount * FACTOR / ONE_HUNDRED / tokenStats[token].totalStakedAmount;
 
-        uint256 penalty = userInfo[token].unstakedAmount  * tokenConfigurations[token].penalty;
+        uint256 penalty = userInfo[msg.sender][token].unstakedAmount  * tokenConfigurations[token].penalty;
         tokenStats[token].accumulatedPenalty += penalty;
 
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
             _msgSender(),
-            userInfo[token].unstakedAmount - penalty
+            userInfo[msg.sender][token].unstakedAmount - penalty
         );
-        burn(amount);
-        userInfo[msg.sender][token].unstakedAmount = 0
-        userInfo[msg.sender][token].unstakedAt = 0
+        burn(userInfo[msg.sender][token].unstakedAmount);
+        userInfo[msg.sender][token].unstakedAmount = 0;
+        userInfo[msg.sender][token].unstakeAt = 0;
 
 
-        emit ImmediateClaim(msg.sender,token);
-
-
+        emit ImmediateClaim(msg.sender, token);
     }
 
-<<<<<<< HEAD
     function cancelUnstake(address token) public {
-               // user needs to have tokens curently unstaking
+        // user needs to have tokens curently unstaking
         require(userInfo[msg.sender][token].unstakedAmount != 0,'User has no tokens unstaking');
-        require(userInfo[msg.sender][token].unstakedAt != 0,'User has no tokens waiting to be unstaked');
+        require(userInfo[msg.sender][token].unstakeAt != 0,'User has no tokens waiting to be unstaked');
 
-        tokenStats[token].rewardSum +=
-            (1 / (tokenStats[token].totalStakedAmount)) *
-            tokenConfigurations[token].cancelPenalty;
+        tokenStats[token].rewardSum += tokenConfigurations[token].cancelPenalty * userInfo[msg.sender][token].unstakedAmount * FACTOR / ONE_HUNDRED / tokenStats[token].totalStakedAmount;
 
         uint256 penalty = userInfo[msg.sender][token].unstakedAmount  * tokenConfigurations[token].cancelPenalty;
-        tokenStats[token].accumulatedPenalty += cancelPenalty;
-         claimReward(token);
+        tokenStats[token].accumulatedPenalty += penalty;
+        claimReward(token);
 
-        tokenStats[token].totalStakedAmount += userInfo[token].unstakedAmount - penalty;
-        userInfo[msg.sender][token].stakedAmount += userInfo[token].unstakedAmount - penalty;
+        tokenStats[token].totalStakedAmount += userInfo[msg.sender][token].unstakedAmount - penalty;
+        userInfo[msg.sender][token].stakedAmount += userInfo[msg.sender][token].unstakedAmount - penalty;
 
-        userInfo[msg.sender][token].unstakedAmount = 0
-        userInfo[msg.sender][token].unstakedAt = 0
+        userInfo[msg.sender][token].unstakedAmount = 0;
+        userInfo[msg.sender][token].unstakeAt = 0;
 
 
         //vIDIA not IDIA given back to user
         ERC20 claimedTokens = ERC20(token);
         claimedTokens.safeTransfer(
             _msgSender(),
-            userInfo[msg.sender][token].unstakedAmount - cancelPenalty
+            userInfo[msg.sender][token].unstakedAmount - penalty
         );
 
 
     }
-
-    function claimReward(address token) public {}
-
 
     // Function for owner to set an optional, separate whitelist setter
     function setWhitelistSetter(address _whitelistSetter) external {
@@ -304,6 +291,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         // verify merkle proof
         return MerkleProof.verify(merkleProof, whitelistRootHash, leaf);
+    }
 
     // claim reward and reset user's reward sum
     function claimReward(address token) public {
@@ -344,7 +332,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
-        tokenConfigurations[token].unvestingDelay = newDelay;
+        tokenConfigurations[token].unstakingDelay = newDelay;
     }
 
     //// EIP2771 meta transactions
