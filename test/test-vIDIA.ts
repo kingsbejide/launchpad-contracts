@@ -26,7 +26,7 @@ export default describe('vIDIA', function () {
 
     // test
     mineNext()
-    await vIDIA.stake('123456')
+    // await vIDIA.stake('123456')
     mineNext()
   })
 
@@ -136,30 +136,40 @@ export default describe('vIDIA', function () {
     mineNext() 
     const vIDIAFactory = await ethers.getContractFactory('vIDIA')
     const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc';
-    const testTokenAddress = '0x0b15Ddf19D47E6a86A56148fb4aFFFc6929BcB89';
-    const vIDIA = await vIDIAFactory.deploy("vIDIA contract","VIDIA",testAddress,testTokenAddress);
-    mineNext()
     owner = (await ethers.getSigners())[0]
     vester = (await ethers.getSigners())[1]
     const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-
+    console.log("TesttokenFactory")
     VestToken = await TestTokenFactory.connect(owner).deploy(
       'Test Vest Token',
       'Vest',
       '21000000000000000000000000' // 21 million * 10**18
     )
-    mineNext()
+    console.log("VesttokenFactory")
+    vIDIA = await vIDIAFactory.deploy("vIDIA contract","VIDIA",testAddress,VestToken.address)
+    console.log("vesttoken deployed")
+    await VestToken.connect(owner).transfer(vester.address, '1000')
+    console.log("TRANSFERRED")
+    await VestToken.connect(vester).approve(
+      vIDIA.address,
+      '10000000',
+    )
+    console.log("APPROVED")
+
+    console.log("BEFORE")
+    console.log(await VestToken.balanceOf(vester.address))
     await vIDIA.stake('100')
-    expect(vIDIA.totalStakedAmount()).to.equal(100);
-    expect(vIDIA.totalStakers()).to.equal(1);
+    console.log("RUNS")
+    // console.log(vIDIA.totalStakedAmount());
+    await expect(vIDIA.totalStakedAmount()).to.equal(100);
+    await expect(vIDIA.totalStakers()).to.equal(1);
 
-    const delay = 10
-    await vIDIA.stake('250')
-    // const value1 = await vIDIA.tokenConfigurations(VestToken.address)
+    // const delay = 10
+    // await vIDIA.stake('250')
+    // // const value1 = await vIDIA.tokenConfigurations(VestToken.address)
 
-    expect(vIDIA.totalStakers()).to.equal(2);
-    expect(vIDIA.totalStakedAmount()).to.equal(350);
-    mineNext()
+    // expect(vIDIA.totalStakers()).to.equal(2);
+    // expect(vIDIA.totalStakedAmount()).to.equal(350);
   })
 
   

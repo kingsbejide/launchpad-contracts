@@ -84,12 +84,17 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function stake(uint256 amount) public {
         //check balance of IDIA in user's address
         totalStakedAmount += amount;
+        console.log("STAKERUN");
+        console.log(totalStakedAmount);
         totalStakers += 1;
         claimReward();
+         console.log("RUNSEND0");
         userInfo[_msgSender()].stakedAmount += amount;
         _mint(_msgSender(),amount);
+        console.log("RUNSEND1");
         ERC20 stakedTokens = ERC20(tokenAddress);
         stakedTokens.safeTransferFrom(_msgSender(), address(this), amount);
+        console.log("RUNSEND2");
         emit Stake(_msgSender(), amount);
     }
 
