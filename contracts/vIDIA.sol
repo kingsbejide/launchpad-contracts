@@ -17,11 +17,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 penalty;
     // if token is enabled for staking
     bool enabled;
-    uint256 accumulatedPenalty;
-    uint256 totalStakedAmount;
-    uint256 totalUnstakedAmount;
-    uint256 totalStakers;
-    uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
+    uint256 public accumulatedPenalty;
+    uint256 public totalStakedAmount;
+    uint256 public totalUnstakedAmount;
+    uint256 public totalStakers;
+    uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
     address admin;
 
@@ -46,7 +46,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
 
     // user info mapping (user addr => token addr => user info)
-    mapping(address => mapping(address => UserInfo)) public userInfo;
+    mapping(address =>UserInfo) public userInfo;
 
     // Events
 
@@ -71,7 +71,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         string memory _symbol,
         address _admin,
         address _tokenAddress
-    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin, _tokenAddress) {
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin) {
         _setupRole(PENALTY_SETTER_ROLE, _msgSender());
         _setupRole(DELAY_SETTER_ROLE, _msgSender());
         _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
@@ -84,11 +84,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function stake(uint256 amount) public {
         //check balance of IDIA in user's address
         totalStakedAmount += amount;
+        totalStakers += 1;
         claimReward();
-        userInfo[_msgsender()].stakedAmount += amount;
-        _mint(_msgsender(),amount);
+        userInfo[_msgSender()].stakedAmount += amount;
+        _mint(_msgSender(),amount);
         ERC20 stakedTokens = ERC20(tokenAddress);
-        stakedTokens.safeTransferFrom(_msgsender(), address(this), amount);
+        stakedTokens.safeTransferFrom(_msgSender(), address(this), amount);
         emit Stake(_msgSender(), amount);
     }
 
@@ -109,21 +110,21 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     // claim reward and reset user's reward sum
-    // function claimReward(address token) public {
-    //     require(
-    //         tokenConfigurations[token].enabled,
-    //         'Invalid token for claiming reward'
-    //     );
-    //     uint256 reward = calculateUserReward(token);
-    //     require(reward <= 0, 'No reward to claim');
-    //     // reset user's rewards sum
-    //     userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
-    //     // transfer reward to user
-    //     ERC20 claimedTokens = ERC20(token);
-    //     claimedTokens.safeTransfer(_msgSender(), reward);
+    function claimReward() public {
+        // require(
+        //     tokenConfigurations[token].enabled,
+        //     'Invalid token for claiming reward'
+        // );
+        // uint256 reward = calculateUserReward(token);
+        // require(reward <= 0, 'No reward to claim');
+        // // reset user's rewards sum
+        // userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
+        // // transfer reward to user
+        // ERC20 claimedTokens = ERC20(token);
+        // claimedTokens.safeTransfer(_msgSender(), reward);
 
-    //     emit ClaimReward(_msgSender(), reward, token);
-    // }
+        // emit ClaimReward(_msgSender(), reward, token);
+    }
 
     function setPenalty(uint256 newPenalty) external {
         require(
