@@ -19,6 +19,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 totalUnstakedAmount;
     uint256 totalStakers;
     uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
+    address tokenAddress;
 
     struct UserInfo {
         uint256 stakedAmount;
