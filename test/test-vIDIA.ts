@@ -20,9 +20,14 @@ export default describe('vIDIA', function () {
 
     // deploy
     const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc';
-    const testTokenAddress = '0x0b15Ddf19D47E6a86A56148fb4aFFFc6929BcB89';
-    const vIDIA = await vIDIAFactory.deploy("vIDIA contract","VIDIA",testAddress,testTokenAddress);
+    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
+    const testTokenAddress = '0x0b15Ddf19D47E6a86A56148fb4aFFFc6929BcB89'
+    const vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      testAddress,
+      testTokenAddress
+    )
 
     // test
     mineNext()
@@ -133,73 +138,66 @@ export default describe('vIDIA', function () {
   // })
 
   it('deploys and stakes tokens', async function () {
-    mineNext() 
+    mineNext()
     const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc';
+    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
     owner = (await ethers.getSigners())[0]
     vester = (await ethers.getSigners())[1]
     const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-    console.log("TesttokenFactory")
     VestToken = await TestTokenFactory.connect(owner).deploy(
       'Test Vest Token',
       'Vest',
       '21000000000000000000000000' // 21 million * 10**18
     )
-    console.log("VesttokenFactory")
-    vIDIA = await vIDIAFactory.deploy("vIDIA contract","VIDIA",testAddress,VestToken.address)
-    console.log("vesttoken deployed")
-    await VestToken.connect(owner).transfer(vester.address, '1000')
-    console.log("TRANSFERRED")
-    await VestToken.connect(vester).approve(
-      vIDIA.address,
-      '10000000',
+    vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      testAddress,
+      VestToken.address
     )
-    console.log("APPROVED")
 
-    console.log("BEFORE")
-    console.log(await VestToken.balanceOf(vester.address))
-    await vIDIA.stake('100')
-    console.log("RUNS")
-    // console.log(vIDIA.totalStakedAmount());
-    await expect(vIDIA.totalStakedAmount()).to.equal(100);
-    await expect(vIDIA.totalStakers()).to.equal(1);
+    await VestToken.transfer(vester.address, '1000') //times out here
+    await VestToken.connect(vester).approve(vIDIA.address, '10000000')
+
+    await vIDIA.connect(vester).stake('100')
+    let totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(100)
+    let totalStakers = (await vIDIA.totalStakers()).toNumber()
+    expect(totalStakers).to.eq(1)
 
     // const delay = 10
-    // await vIDIA.stake('250')
-    // // const value1 = await vIDIA.tokenConfigurations(VestToken.address)
-
-    // expect(vIDIA.totalStakers()).to.equal(2);
-    // expect(vIDIA.totalStakedAmount()).to.equal(350);
+    await vIDIA.connect(vester).stake('250')
+    totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(350)
+    totalStakers = (await vIDIA.totalStakers()).toNumber()
+    expect(totalStakers).to.eq(2)
   })
 
-  
+  it('deploys and does not stake 0  tokens', async function () {
+    mineNext()
+    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
+    owner = (await ethers.getSigners())[0]
+    vester = (await ethers.getSigners())[1]
+    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    VestToken = await TestTokenFactory.connect(owner).deploy(
+      'Test Vest Token',
+      'Vest',
+      '21000000000000000000000000' // 21 million * 10**18
+    )
+    vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      testAddress,
+      VestToken.address
+    )
 
-  // it('deploys and does not stake negative or 0 tokens', async function () {
-  //   mineNext() 
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
-  //   mineNext()
-  //   owner = (await ethers.getSigners())[0]
-  //   vester = (await ethers.getSigners())[1]
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    await VestToken.transfer(vester.address, '1000') //times out here
+    await VestToken.connect(vester).approve(vIDIA.address, '10000000')
 
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
-  //   mineNext()
-  //   await vIDIA.stake('0',VestToken.address)
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.totalStakers).to.equal(0);
-  //   expect(value.totalStakedAmount).to.equal(0);
+    await expect(
+      vIDIA.connect(vester).stake('0')
+    ).to.be.revertedWith('User cannot stake 0 tokens')
 
-  //   const delay = 10
-  //   await vIDIA.stake('-1',VestToken.address)
-  //   const value1 = await vIDIA.tokenConfigurations(VestToken.address)
-
-  //   expect(value.totalStakers).to.equal(0);
-  //   expect(value.totalStakedAmount).to.equal(0);
-  //   mineNext()
-  // })
+  })
 })
