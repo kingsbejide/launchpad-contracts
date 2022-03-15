@@ -19,7 +19,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 totalUnstakedAmount;
     uint256 totalStakers;
     uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
-    address tokenAddress;
+    address public tokenAddress;
     address admin;
 
     struct UserInfo {
@@ -66,12 +66,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     constructor(
         string memory _name,
         string memory _symbol,
-        address admin,
-        address tokenAddress
-    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin, tokenAddress) {
+        address _admin,
+        address _tokenAddress
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin, _tokenAddress) {
         _setupRole(PENALTY_SETTER_ROLE, _msgSender();
         _setupRole(DELAY_SETTER_ROLE, _msgSender());
         _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
+        tokenAddress = _tokenAddress;
+        admin = _admin;
     }
 
     function stake(uint256 amount) public {
