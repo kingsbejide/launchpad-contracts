@@ -4,6 +4,9 @@ pragma solidity ^0.8.4;
 import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
+import '../library/IFTokenStandard.sol';
+import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
@@ -69,12 +72,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         address _admin,
         address _tokenAddress
     ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin, _tokenAddress) {
-        _setupRole(PENALTY_SETTER_ROLE, _msgSender();
+        _setupRole(PENALTY_SETTER_ROLE, _msgSender());
         _setupRole(DELAY_SETTER_ROLE, _msgSender());
         _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
         tokenAddress = _tokenAddress;
         admin = _admin;
     }
+
+
 
     function stake(uint256 amount) public {
         //check balance of IDIA in user's address
@@ -82,7 +87,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         claimReward();
         userInfo[_msgsender()].stakedAmount += amount;
         _mint(_msgsender(),amount);
-        ERC20 stakedTokens = ERC20(TOKEN_ADDRESS);
+        ERC20 stakedTokens = ERC20(tokenAddress);
         stakedTokens.safeTransferFrom(_msgsender(), address(this), amount);
         emit Stake(_msgSender(), amount);
     }
@@ -104,21 +109,21 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     // claim reward and reset user's reward sum
-    function claimReward(address token) public {
-        require(
-            tokenConfigurations[token].enabled,
-            'Invalid token for claiming reward'
-        );
-        uint256 reward = calculateUserReward(token);
-        require(reward <= 0, 'No reward to claim');
-        // reset user's rewards sum
-        userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
-        // transfer reward to user
-        ERC20 claimedTokens = ERC20(token);
-        claimedTokens.safeTransfer(_msgSender(), reward);
+    // function claimReward(address token) public {
+    //     require(
+    //         tokenConfigurations[token].enabled,
+    //         'Invalid token for claiming reward'
+    //     );
+    //     uint256 reward = calculateUserReward(token);
+    //     require(reward <= 0, 'No reward to claim');
+    //     // reset user's rewards sum
+    //     userInfo[msg.sender][token].lastRewardSum = tokenStats[token].rewardSum;
+    //     // transfer reward to user
+    //     ERC20 claimedTokens = ERC20(token);
+    //     claimedTokens.safeTransfer(_msgSender(), reward);
 
-        emit ClaimReward(_msgSender(), reward, token);
-    }
+    //     emit ClaimReward(_msgSender(), reward, token);
+    // }
 
     function setPenalty(uint256 newPenalty) external {
         require(
@@ -133,7 +138,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
-        unvestingDelay = newDelay;
+        unstakingDelay = newDelay;
     }
 
     //// EIP2771 meta transactions
@@ -166,4 +171,5 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     {
         return super.supportsInterface(interfaceId);
     }
+  
 }
