@@ -15,8 +15,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint24 unstakingDelay;
     // constant penalty for early unvesting
     uint256 penalty;
-    // if token is enabled for staking
-    bool enabled;
     uint256 public accumulatedPenalty;
     uint256 public totalStakedAmount;
     uint256 public totalUnstakedAmount;
