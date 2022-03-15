@@ -77,8 +77,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         claimReward();
         userInfo[_msgsender()].stakedAmount += amount;
         _mint(_msgsender(),amount);
-        // claimedTokens.safeTransfer(, amount);
-
+        ERC20 stakedTokens = ERC20(TOKEN_ADDRESS);
+        stakedTokens.safeTransferFrom(_msgsender(), address(this), amount);
         emit Stake(_msgSender(), amount);
     }
 
