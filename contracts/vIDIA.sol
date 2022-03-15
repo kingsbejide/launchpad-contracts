@@ -8,9 +8,6 @@ import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
 
-
-    //address for underlying asset
-    address public constant TOKEN_ADDRESS = 0x0b15ddf19d47e6a86a56148fb4afffc6929bcb89;
     // delay for unvesting token
     uint24 unstakingDelay;
     // constant penalty for early unvesting
@@ -67,8 +64,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     constructor(
         string memory _name,
         string memory _symbol,
-        address admin
-    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin) {
+        address admin,
+        address tokenAddress
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin, tokenAddress) {
         _setupRole(PENALTY_SETTER_ROLE, _msgSender();
         _setupRole(DELAY_SETTER_ROLE, _msgSender());
         _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
