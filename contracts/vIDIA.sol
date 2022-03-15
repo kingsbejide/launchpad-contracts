@@ -7,30 +7,23 @@ import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
-    // STRUCTS
 
-    // Configuration info for a stakeable token
-    struct StakeTokenConfig {
-        // delay for unvesting token
-        uint24 unstakingDelay;
-        // constant penalty for early unvesting
-        uint256 penalty;
-        // if token is enabled for staking
-        bool enabled;
-    }
+    // delay for unvesting token
+    uint24 unstakingDelay;
+    // constant penalty for early unvesting
+    uint256 penalty;
+    // if token is enabled for staking
+    bool enabled;
+    uint256 accumulatedPenalty;
+    uint256 totalStakedAmount;
+    uint256 totalUnstakedAmount;
+    uint256 totalStakers;
+    uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
 
     struct UserInfo {
         uint256 stakedAmount;
         uint256 unstakeAt;
         uint256 unstakedAmount;
-    }
-
-    struct StakeTokenStats {
-        uint256 accumulatedPenalty;
-        uint256 totalStakedAmount;
-        uint256 totalUnstakedAmount;
-        uint256 totalStakers;
-        uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
     }
 
     bytes32 public constant PENALTY_SETTER_ROLE =
@@ -46,61 +39,56 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     bytes32 public whitelistRootHash;
 
-    // token address => token config
-    mapping(address => StakeTokenConfig) public tokenConfigurations;
-
-    // token address => token stats
-    mapping(address => StakeTokenStats) public tokenStats;
 
     // user info mapping (user addr => token addr => user info)
     mapping(address => mapping(address => UserInfo)) public userInfo;
 
     // Events
 
-    event Stake(address _from, uint256 amount, address token);
+    event Stake(address _from, uint256 amount);
 
-    event Unstake(address _from, uint256 amount, address token);
+    event Unstake(address _from, uint256 amount);
 
-    event ImmediateUnstake(address _from, uint256 amount, address token);
+    event ImmediateUnstake(address _from, uint256 amount);
 
     event SetWhitelistSetter(address whitelistSetter);
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
-    event Claim(address _from, address token);
+    event Claim(address _from);
 
-    event ImmediateClaim(address _from, address token);
+    event ImmediateClaim(address _from);
 
-    event ClaimReward(address _from, uint256 amount, address token);
+    event ClaimReward(address _from, uint256 amount);
 
     constructor(
         string memory _name,
         string memory _symbol,
         address admin
     ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, admin) {
-        _setupRole(PENALTY_SETTER_ROLE, msg.sender);
-        _setupRole(DELAY_SETTER_ROLE, msg.sender);
-        _setupRole(WHITELIST_SETTER_ROLE, msg.sender);
+        _setupRole(PENALTY_SETTER_ROLE, _msgSender();
+        _setupRole(DELAY_SETTER_ROLE, _msgSender());
+        _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
     }
 
-    function stake(uint256 amount, address token) public {
-        emit Stake(msg.sender, amount, token);
+    function stake(uint256 amount) public {
+        emit Stake(_msgSender(), amount);
     }
 
-    function unstake(uint256 amount, address token) public {
-        emit Unstake(msg.sender, amount, token);
+    function unstake(uint256 amount) public {
+        emit Unstake(_msgSender(), amount);
     }
 
-    function immediateUnstake(uint256 amount, address token) public {
-        emit ImmediateUnstake(msg.sender, amount, token);
+    function immediateUnstake(uint256 amount) public {
+        emit ImmediateUnstake(_msgSender(), amount);
     }
 
-    function claim(address token) public {
-        emit Claim(msg.sender, token);
+    function claim() public {
+        emit Claim(_msgSender());
     }
 
-    function immediateClaim(address token) public {
-        emit ImmediateClaim(msg.sender, token);
+    function immediateClaim() public {
+        emit ImmediateClaim(_msgSender());
     }
 
     // claim reward and reset user's reward sum
@@ -120,20 +108,20 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit ClaimReward(_msgSender(), reward, token);
     }
 
-    function setPenalty(uint256 newPenalty, address token) external {
+    function setPenalty(uint256 newPenalty) external {
         require(
             hasRole(PENALTY_SETTER_ROLE, _msgSender()),
             'Must have penalty setter role'
         );
-        tokenConfigurations[token].penalty = newPenalty;
+        penalty = newPenalty;
     }
 
-    function setUnvestingDelay(uint24 newDelay, address token) external {
+    function setUnvestingDelay(uint24 newDelay) external {
         require(
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
-        tokenConfigurations[token].unvestingDelay = newDelay;
+        unvestingDelay = newDelay;
     }
 
     //// EIP2771 meta transactions
