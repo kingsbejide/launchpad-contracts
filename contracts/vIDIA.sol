@@ -14,13 +14,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint24 unstakingDelay;
     // constant penalty for early unvesting
     uint256 penalty;
-    // if token is enabled for staking
-    bool enabled;
-    uint256 accumulatedPenalty;
-    uint256 totalStakedAmount;
-    uint256 totalUnstakedAmount;
-    uint256 totalStakers;
-    uint256 rewardSum; // (1/T1 + 1/T2 + 1/T3)
+    uint256 public accumulatedPenalty;
+    uint256 public totalStakedAmount;
+    uint256 public totalUnstakedAmount;
+    uint256 public totalStakers;
+    uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
     address admin;
 
@@ -41,7 +39,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     EnumerableSet.AddressSet private whitelistAddresses;
 
     // user info mapping (user addr => token addr => user info)
-    mapping(address => mapping(address => UserInfo)) public userInfo;
+    mapping(address =>UserInfo) public userInfo;
 
     // Events
 
@@ -66,7 +64,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         string memory _symbol,
         address _admin,
         address _tokenAddress
-    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin, _tokenAddress) {
+    ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin) {
         _setupRole(PENALTY_SETTER_ROLE, _msgSender());
         _setupRole(DELAY_SETTER_ROLE, _msgSender());
         _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
@@ -95,7 +93,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     // claim reward and reset user's reward sum
-    function claimReward(address token) public {
+    function claimReward() public {
         require(
             tokenConfigurations[token].enabled,
             'Invalid token for claiming reward'
@@ -124,7 +122,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
-        unvestingDelay = newDelay;
+        unstakingDelay = newDelay;
     }
 
     /** 
@@ -212,4 +210,5 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     {
         return super.supportsInterface(interfaceId);
     }
+  
 }
