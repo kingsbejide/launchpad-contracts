@@ -148,7 +148,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[_msgSender()].stakedAmount += stakeAmount;
         userInfo[_msgSender()].lastRewardSum = rewardSum;
         totalStakedAmount += stakeAmount;
-        emit CancelUnstakePending(_msgSender(), fee, stakedAmount);
+        emit CancelUnstakePending(_msgSender(), fee, stakeAmount);
     }
 
     // claim reward and reset user's reward sum
