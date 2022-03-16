@@ -63,6 +63,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event InstantUnstakePending(address _from, uint256 fee, uint256 withdrawAmount);
 
+    event CancelUnstakePending(address _from, uint256 fee, uint256 stakedAmount);
+
     event ClaimReward(address _from, uint256 amount);
 
     constructor(
@@ -133,6 +135,20 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     function cancelUnstakePending(uint256 amount) public {
+        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
+        claimReward();
+
+        uint256 fee = amount * cancelUnstakeFee / ONE_HUNDRED;
+        uint256 stakeAmount = amount - fee;
+
+        rewardSum += fee * FACTOR / totalStakedAmount;
+        accumulatedFee += fee;
+
+        userInfo[_msgSender()].unstakedAmount -= amount;
+        userInfo[_msgSender()].stakedAmount += stakeAmount;
+        userInfo[_msgSender()].lastRewardSum = rewardSum;
+        totalStakedAmount += stakeAmount;
+        emit CancelUnstakePending(_msgSender(), fee, stakedAmount);
     }
 
     // claim reward and reset user's reward sum
