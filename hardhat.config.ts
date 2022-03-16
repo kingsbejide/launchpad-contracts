@@ -1,5 +1,4 @@
 import '@nomiclabs/hardhat-waffle'
-import "@nomiclabs/hardhat-solhint"
 import dotenv from 'dotenv'
 
 dotenv.config()
