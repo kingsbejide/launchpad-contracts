@@ -103,9 +103,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         rewardSum += fee * FACTOR / totalStakedAmount;
         accumulatedFee += fee;
 
-        burn(amount);
         totalStakedAmount -= amount;
         userInfo[_msgSender()].stakedAmount -= amount;
+        burn(amount);
         ERC20(tokenAddress).safeTransfer(_msgSender(),withdrawAmount);
         emit InstantUnstake(_msgSender(), fee, withdrawAmount);
     }
@@ -125,11 +125,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         rewardSum += fee * FACTOR / totalStakedAmount;
         accumulatedFee += fee;
         
-        burn(amount);
         userInfo[_msgSender()].unstakedAmount -= amount;
         if (userInfo[_msgSender()].unstakedAmount == 0) {
             userInfo[_msgSender()].unstakeAt = 0;
         }
+        burn(amount);
         ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
     }
@@ -145,9 +145,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         accumulatedFee += fee;
 
         userInfo[_msgSender()].unstakedAmount -= amount;
+        if (userInfo[_msgSender()].unstakedAmount == 0) {
+            userInfo[_msgSender()].unstakeAt = 0;
+        }
+
         userInfo[_msgSender()].stakedAmount += stakeAmount;
-        userInfo[_msgSender()].lastRewardSum = rewardSum;
         totalStakedAmount += stakeAmount;
+        userInfo[_msgSender()].lastRewardSum = rewardSum;
         emit CancelUnstakePending(_msgSender(), fee, stakeAmount);
     }
 
