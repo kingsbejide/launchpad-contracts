@@ -11,6 +11,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
 
     uint256 private constant FACTOR = 10**18;
+    uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
 
     // Fees for different actions. All fees denoted in basis points
     uint256 public instantUnstakeFee = 2000; // initialzed at 20%
@@ -21,7 +22,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
-    uint256 public totalUnstakedAmount;
     uint256 public totalStakers;
     uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
@@ -53,7 +53,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event Unstake(address _from, uint256 amount);
 
-    event ImmediateUnstake(address _from, uint256 amount);
+    event InstantUnstake(address _from, uint256 fee, uint256 withdrawAmount);
 
     event SetWhitelistSetter(address whitelistSetter);
 
@@ -61,7 +61,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event Claim(address _from);
 
-    event ImmediateClaim(address _from);
+    event InstantUnstakePending(address _from, uint256 fee, uint256 withdrawAmount);
 
     event ClaimReward(address _from, uint256 amount);
 
@@ -71,9 +71,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         address _admin,
         address _tokenAddress
     ) AccessControlEnumerable() IFTokenStandard(_name, _symbol, _admin) {
-        _setupRole(FEE_SETTER_ROLE, _msgSender());
-        _setupRole(DELAY_SETTER_ROLE, _msgSender());
-        _setupRole(WHITELIST_SETTER_ROLE, _msgSender());
+        _setupRole(FEE_SETTER_ROLE, _admin);
+        _setupRole(DELAY_SETTER_ROLE, _admin);
+        _setupRole(WHITELIST_SETTER_ROLE, _admin);
         tokenAddress = _tokenAddress;
         admin = _admin;
     }
@@ -86,12 +86,53 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit Unstake(_msgSender(), amount);
     }
 
-    function immediateUnstake(uint256 amount) public {
-        emit ImmediateUnstake(_msgSender(), amount);
+    /** 
+     @notice Function for a user to pay fee and instantly unstake tokens *NOT* in the unstaking queue
+     @notice For tokens in the unstaking queue, use instantUnstakePending()
+     @param amount the amount of tokens to instantly withdraw from staked tokens
+     */
+    function instantUnstake(uint256 amount) public {
+        claimReward();
+        
+        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
+        uint256 withdrawAmount = amount - fee;
+
+        // mul by FACTOR of 10**18 to reduce truncation
+        rewardSum += fee * FACTOR / totalStakedAmount;
+        accumulatedFee += fee;
+
+        burn(amount);
+        totalStakedAmount -= amount;
+        userInfo[_msgSender()].stakedAmount -= amount;
+        ERC20(tokenAddress).safeTransfer(_msgSender(),withdrawAmount);
+        emit InstantUnstake(_msgSender(), fee, withdrawAmount);
     }
 
-    function immediateClaim() public {
-        emit ImmediateClaim(_msgSender());
+    /** 
+     @notice Function for a user to pay fee and instantly unstake tokens in the unstaking queue
+     @dev Requires user to have tokens in the unstake queue which cannot be claimed now
+     @param amount the amount of tokens to instantly withdraw from unstake queue
+     */
+    function instantUnstakePending(uint256 amount) public {
+        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake without paying fee');
+        
+        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
+        uint256 withdrawAmount = amount - fee;
+
+        // mul by FACTOR of 10**18 to reduce truncation
+        rewardSum += fee * FACTOR / totalStakedAmount;
+        accumulatedFee += fee;
+        
+        burn(amount);
+        userInfo[_msgSender()].unstakedAmount -= amount;
+        if (userInfo[_msgSender()].unstakedAmount == 0) {
+            userInfo[_msgSender()].unstakeAt = 0;
+        }
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
+        emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
+    }
+
+    function cancelUnstakePending(uint256 amount) public {
     }
 
     // claim reward and reset user's reward sum
