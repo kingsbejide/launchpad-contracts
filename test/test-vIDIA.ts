@@ -32,7 +32,10 @@ export default describe('vIDIA', function () {
       owner.address,
       testTokenAddress
     )
+<<<<<<< HEAD
 
+=======
+>>>>>>> c4b2487115aac0c8265b916b085c93711ede91c2
   })
 
   // it('deploys and can set penalty of a token', async function () {
@@ -40,7 +43,10 @@ export default describe('vIDIA', function () {
   //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
   //   vIDIA = await vIDIAFactory.deploy()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> c4b2487115aac0c8265b916b085c93711ede91c2
   //   const [owner] = await ethers.getSigners()
   //   const penalty = 10
   //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
@@ -72,12 +78,16 @@ export default describe('vIDIA', function () {
   //   )
   //   await vIDIA.connect(vester).setPenalty(penalty, VestToken.address)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> c4b2487115aac0c8265b916b085c93711ede91c2
   //   const value = await vIDIA.tokenConfigurations(VestToken.address)
   //   expect(value.penalty).to.equal(0)
   // })
 
   // it('deploys and can set delay of a token', async function () {
+<<<<<<< HEAD
 
 
   //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
@@ -188,8 +198,49 @@ export default describe('vIDIA', function () {
     ).to.be.revertedWith('User cannot stake 0 tokens')
 
   })
+=======
 
-  it('test whitelist feature', async() => {
+  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+  //   vIDIA = await vIDIAFactory.deploy()
+
+  //   const [owner] = await ethers.getSigners()
+  //   const delay = 10
+  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+  //   VestToken = await TestTokenFactory.connect(owner).deploy(
+  //     'Test Vest Token',
+  //     'Vest',
+  //     '21000000000000000000000000' // 21 million * 10**18
+  //   )
+
+  //   await vIDIA.setUnvestingDelay(delay, VestToken.address)
+
+  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
+  //   expect(value.unvestingDelay).to.equal(10)
+  // })
+
+  // it('deploys and cannot set delay of a token, thus still 0', async function () {
+
+  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+  //   vIDIA = await vIDIAFactory.deploy()
+
+  //   owner = (await ethers.getSigners())[0]
+  //   vester = (await ethers.getSigners())[1]
+  //   const delay = 10
+  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+  //   VestToken = await TestTokenFactory.connect(owner).deploy(
+  //     'Test Vest Token',
+  //     'Vest',
+  //     '21000000000000000000000000' // 21 million * 10**18
+  //   )
+
+  //   await vIDIA.connect(vester).setUnvestingDelay(delay, VestToken.address)
+>>>>>>> c4b2487115aac0c8265b916b085c93711ede91c2
+
+  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
+  //   expect(value.unvestingDelay).to.equal(0)
+  // })
+
+  it('test whitelist feature', async () => {
     const TestTokenFactory = await ethers.getContractFactory('GenericToken')
     const underlying = await TestTokenFactory.connect(owner).deploy(
       'Test',
@@ -209,24 +260,29 @@ export default describe('vIDIA', function () {
     await vidia.approve(vester.address, MaxUint256)
 
     const checkFailure = async () => {
-      await expect(vidia.transfer(vester.address, one))
-        .to.be.revertedWith('Origin and dest address not in whitelist')
-      await expect(vidia.connect(vester).transferFrom(owner.address, vester.address, one))
-        .to.be.revertedWith('Origin and dest address not in whitelist')
+      await expect(vidia.transfer(vester.address, one)).to.be.revertedWith(
+        'Origin and dest address not in whitelist'
+      )
+      await expect(
+        vidia.connect(vester).transferFrom(owner.address, vester.address, one)
+      ).to.be.revertedWith('Origin and dest address not in whitelist')
     }
 
     const checkSuccess = async () => {
       await expect(vidia.transfer(vester.address, one))
         .to.emit(vidia, 'Transfer')
         .withArgs(owner.address, vester.address, one)
-      await expect(vidia.connect(vester).transferFrom(owner.address, vester.address, one))
+      await expect(
+        vidia.connect(vester).transferFrom(owner.address, vester.address, one)
+      )
         .to.emit(vidia, 'Transfer')
         .withArgs(owner.address, vester.address, one)
     }
 
     const checkWhitelist = async (addrArr: string[]) => {
-      expect(JSON.stringify(await vidia.getAllWhitelistedAddrs()))
-        .to.eq(JSON.stringify(addrArr))   
+      expect(JSON.stringify(await vidia.getAllWhitelistedAddrs())).to.eq(
+        JSON.stringify(addrArr)
+      )
     }
 
     // case 1: no whitelist, should fail transfer
