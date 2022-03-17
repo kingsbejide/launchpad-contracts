@@ -76,8 +76,11 @@ export default describe('vIDIA', function () {
 
   // it('deploys and can set delay of a token', async function () {
 
+
   //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
   //   vIDIA = await vIDIAFactory.deploy()
+
+ 
 
   //   const [owner] = await ethers.getSigners()
   //   const delay = 10
@@ -88,16 +91,21 @@ export default describe('vIDIA', function () {
   //     '21000000000000000000000000' // 21 million * 10**18
   //   )
 
+
   //   await vIDIA.setUnvestingDelay(delay, VestToken.address)
+
 
   //   const value = await vIDIA.tokenConfigurations(VestToken.address)
   //   expect(value.unvestingDelay).to.equal(10)
   // })
 
   // it('deploys and cannot set delay of a token, thus still 0', async function () {
+ 
 
   //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
   //   vIDIA = await vIDIAFactory.deploy()
+
+  
 
   //   owner = (await ethers.getSigners())[0]
   //   vester = (await ethers.getSigners())[1]
@@ -114,6 +122,37 @@ export default describe('vIDIA', function () {
   //   const value = await vIDIA.tokenConfigurations(VestToken.address)
   //   expect(value.unvestingDelay).to.equal(0)
   // })
+
+  it('deploys and stakes tokens', async function () {
+    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
+    owner = (await ethers.getSigners())[0]
+    vester = (await ethers.getSigners())[1]
+    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    VestToken = await TestTokenFactory.connect(owner).deploy(
+      'Test Vest Token',
+      'Vest',
+      '21000000000000000000000000' // 21 million * 10**18
+    )
+    vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      testAddress,
+      VestToken.address
+    )
+
+    await VestToken.transfer(vester.address, ethers.constants.MaxUint256) //times out here
+    await VestToken.connect(vester).approve(vIDIA.address, '10000000')
+    const firstStakeAmt = 100
+    const secondStakeAmt = 250
+    await vIDIA.connect(vester).stake(firstStakeAmt)
+    let totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(firstStakeAmt)
+
+    await vIDIA.connect(vester).stake(secondStakeAmt)
+    totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(firstStakeAmt + secondStakeAmt)
+  })
 
   it('test whitelist feature', async () => {
     const TestTokenFactory = await ethers.getContractFactory('GenericToken')
