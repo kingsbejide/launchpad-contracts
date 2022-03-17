@@ -17,7 +17,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 public accumulatedPenalty;
     uint256 public totalStakedAmount;
     uint256 public totalUnstakedAmount;
-    uint256 public totalStakers;
     uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
     address admin;
@@ -76,10 +75,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     function stake(uint256 amount) public {
         //check balance of IDIA in user's address?
-        require(amount != 0, 'User cannot stake 0 tokens');
-        totalStakedAmount += amount;
-        totalStakers += 1;
         claimReward();
+        totalStakedAmount += amount;
         userInfo[_msgSender()].stakedAmount += amount;
         _mint(_msgSender(), amount);
         ERC20 stakedTokens = ERC20(tokenAddress);
