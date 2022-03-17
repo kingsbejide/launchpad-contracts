@@ -74,7 +74,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
 
     function stake(uint256 amount) public {
-        //check balance of IDIA in user's address?
         claimReward();
         totalStakedAmount += amount;
         userInfo[_msgSender()].stakedAmount += amount;
