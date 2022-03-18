@@ -95,6 +95,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     /** 
      @notice Function for a user to retrieve underlying tokens after waiting for the unstake delay
+     @notice *no* fees required
      @notice For tokens in the unstaking queue, use instantUnstakePending()
      */
     function claimUnstaked() public {
@@ -103,6 +104,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     /** 
      @notice Function for a user to pay fee and receive underlying tokens *NOT* in the unstaking queue
+     @notice fees required
      @notice For tokens in the unstaking queue, use claimPendingUnstake()
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
@@ -111,7 +113,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     /** 
-     @notice Function for a user to pay fee and instantly unstake tokens in the unstaking queue
+     @notice Function for a user to retrieve underlying tokens associated with vidia in the unstaking queue
+     @notice fees required
      @dev Requires user to have tokens in the unstake queue which cannot be claimed now
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
