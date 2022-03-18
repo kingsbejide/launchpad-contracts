@@ -52,15 +52,15 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event Unstake(address _from, uint256 amount);
 
-    event InstantUnstake(address _from, uint256 fee, uint256 withdrawAmount);
+    event ClaimStaked(address _from, uint256 fee, uint256 withdrawAmount);
 
     event SetWhitelistSetter(address whitelistSetter);
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
-    event Claim(address _from);
+    event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
-    event InstantUnstakePending(address _from, uint256 fee, uint256 withdrawAmount);
+    event ClaimPendingUnstake(address _from, uint256 fee, uint256 withdrawAmount);
 
     event CancelPendingUnstake(address _from, uint256 fee, uint256 stakedAmount);
 
@@ -79,8 +79,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         admin = _admin;
     }
 
-
-
     function stake(uint256 amount) public {
         claimReward();
         totalStakedAmount += amount;
@@ -96,12 +94,20 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     /** 
-     @notice Function for a user to pay fee and instantly unstake tokens *NOT* in the unstaking queue
+     @notice Function for a user to retrieve underlying tokens after waiting for the unstake delay
      @notice For tokens in the unstaking queue, use instantUnstakePending()
+     */
+    function claimUnstaked() public {
+        emit ClaimUnstaked(_msgSender(), 0);
+    }
+
+    /** 
+     @notice Function for a user to pay fee and receive underlying tokens *NOT* in the unstaking queue
+     @notice For tokens in the unstaking queue, use claimPendingUnstake()
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
-    function instantUnstake(uint256 amount) public {
-        emit InstantUnstake(_msgSender(), fee, withdrawAmount);
+    function claimStaked(uint256 amount) public {
+        emit ClaimStaked(_msgSender(), fee, withdrawAmount);
     }
 
     /** 
@@ -109,8 +115,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires user to have tokens in the unstake queue which cannot be claimed now
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
-    function instantUnstakePending(uint256 amount) public {
-        emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
+    function claimPendingUnstake(uint256 amount) public {
+        emit ClaimPendingUnstake(_msgSender(), fee, withdrawAmount);
     }
 
     function cancelPendingUnstake(uint256 amount) public {
