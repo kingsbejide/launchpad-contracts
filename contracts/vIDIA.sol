@@ -22,7 +22,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
-    uint256 public totalStakers;
     uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
     address admin;
@@ -179,7 +178,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return uint256 amount of underlying tokens the user has earned from fees
      */
     function calculateUserReward() public view returns (uint256) {
-        return 0;    }
+        return 0;    
+    }
 
     /** 
      @notice Adds an address to the transfer whitelist
