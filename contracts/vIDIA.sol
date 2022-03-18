@@ -13,12 +13,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 private constant FACTOR = 10**18;
     uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
 
-    // Fees for different actions. All fees denoted in basis points
-    uint256 public instantUnstakeFee = 2000; // initialzed at 20%
-    uint256 public cancelUnstakeFee = 200; // initialized at 2%
-
     // delay for unstaking token
     uint256 public unstakingDelay = 86400 * 14; // 2 weeks in seconds
+
+    // Fees for different actions. All fees denoted in basis points
+    uint256 public skipUnstakeDelayFee = 2000; // initialzed at 20%
+    uint256 public cancelUnstakeFee = 200; // initialized at 2%
 
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
@@ -107,7 +107,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
     function claimStaked(uint256 amount) public {
-        emit ClaimStaked(_msgSender(), fee, withdrawAmount);
+        emit ClaimStaked(_msgSender(), 0, amount);
     }
 
     /** 
@@ -116,11 +116,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
     function claimPendingUnstake(uint256 amount) public {
-        emit ClaimPendingUnstake(_msgSender(), fee, withdrawAmount);
-    }
-
-    function cancelPendingUnstake(uint256 amount) public {
-        emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
+        emit ClaimPendingUnstake(_msgSender(), 0, amount);
     }
 
     // claim reward and reset user's reward sum
@@ -141,13 +137,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires fee setter role and fee must be below 10000 basis pts
      @param newFee the new fee
      */
-    function updateInstantUnstakeFee(uint256 newFee) external {
+    function updateSkipUnstakeDelayFee(uint256 newFee) external {
         require(
             hasRole(FEE_SETTER_ROLE, _msgSender()),
             'Must have fee setter role'
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
-        instantUnstakeFee = newFee;
+        skipUnstakeDelayFee = newFee;
     }
 
     /** 
@@ -184,7 +180,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return uint256 amount of underlying tokens the user has earned from fees
      */
     function calculateUserReward() public view returns (uint256) {
-        return 0;    
+        return 0;
     }
 
     /** 
@@ -248,8 +244,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return ERC20.transferFrom(from, to, amount);
     }
 
-    //// EIP2771 meta transactions
-
+    /** 
+     @notice msg.sender for EIP2771 meta transactions. Parses out original msg.sender when transaction is sent by relayer
+     @return address of msg.sender
+     */
     function _msgSender()
         internal
         view
@@ -259,6 +257,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return ERC2771ContextUpdateable._msgSender();
     }
 
+    /** 
+     @notice msg.data for EIP2771 meta transactions. Parses out original msg.data when transaction is sent by relayer
+     @return bytes of msg.data
+     */
     function _msgData()
         internal
         view
@@ -269,7 +271,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     //// EIP1363 payable token
-
     function supportsInterface(bytes4 interfaceId)
         public
         view
