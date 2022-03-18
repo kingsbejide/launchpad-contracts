@@ -102,22 +102,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
     function instantUnstake(uint256 amount) public {
-        claimReward();
-        
-        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
-        uint256 withdrawAmount = amount - fee;
-
-        totalStakedAmount -= amount;
-        userInfo[_msgSender()].stakedAmount -= amount;
-
-        if (totalStakedAmount != 0) {
-            // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
-        }
-        accumulatedFee += fee;
-
-        burn(amount);
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         emit InstantUnstake(_msgSender(), fee, withdrawAmount);
     }
 
@@ -127,47 +111,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
     function instantUnstakePending(uint256 amount) public {
-        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake without paying fee');
-        
-        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
-        uint256 withdrawAmount = amount - fee;
-
-        if (totalStakedAmount != 0) {
-            // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
-        }
-        accumulatedFee += fee;
-        
-        userInfo[_msgSender()].unstakedAmount -= amount;
-        if (userInfo[_msgSender()].unstakedAmount == 0) {
-            userInfo[_msgSender()].unstakeAt = 0;
-        }
-        burn(amount);
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
     }
 
     function cancelPendingUnstake(uint256 amount) public {
-        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
-        claimReward();
-
-        uint256 fee = amount * cancelUnstakeFee / ONE_HUNDRED;
-        uint256 stakeAmount = amount - fee;
-
-        if (totalStakedAmount != 0) {
-            // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
-        }
-                accumulatedFee += fee;
-
-        userInfo[_msgSender()].unstakedAmount -= amount;
-        if (userInfo[_msgSender()].unstakedAmount == 0) {
-            userInfo[_msgSender()].unstakeAt = 0;
-        }
-
-        userInfo[_msgSender()].stakedAmount += stakeAmount;
-        totalStakedAmount += stakeAmount;
-        userInfo[_msgSender()].lastRewardSum = rewardSum;
         emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
     }
 
@@ -232,10 +179,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return uint256 amount of underlying tokens the user has earned from fees
      */
     function calculateUserReward() public view returns (uint256) {
-        return
-            userInfo[_msgSender()].stakedAmount *
-            (rewardSum - userInfo[_msgSender()].lastRewardSum) / FACTOR;
-    }
+        return 0;    }
 
     /** 
      @notice Adds an address to the transfer whitelist
