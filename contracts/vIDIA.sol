@@ -18,7 +18,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 public cancelUnstakeFee = 200; // initialized at 2%
 
     // delay for unstaking token
-    uint256 private unstakingDelay = 86400 * 14; // 2 weeks in seconds
+    uint256 public unstakingDelay = 86400 * 14; // 2 weeks in seconds
 
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
@@ -63,7 +63,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event InstantUnstakePending(address _from, uint256 fee, uint256 withdrawAmount);
 
-    event CancelUnstakePending(address _from, uint256 fee, uint256 stakedAmount);
+    event CancelPendingUnstake(address _from, uint256 fee, uint256 stakedAmount);
 
     event ClaimReward(address _from, uint256 amount);
 
@@ -99,14 +99,17 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
-        // mul by FACTOR of 10**18 to reduce truncation
-        rewardSum += fee * FACTOR / totalStakedAmount;
-        accumulatedFee += fee;
-
         totalStakedAmount -= amount;
         userInfo[_msgSender()].stakedAmount -= amount;
+
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
+        accumulatedFee += fee;
+
         burn(amount);
-        ERC20(tokenAddress).safeTransfer(_msgSender(),withdrawAmount);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         emit InstantUnstake(_msgSender(), fee, withdrawAmount);
     }
 
@@ -121,8 +124,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
-        // mul by FACTOR of 10**18 to reduce truncation
-        rewardSum += fee * FACTOR / totalStakedAmount;
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
         accumulatedFee += fee;
         
         userInfo[_msgSender()].unstakedAmount -= amount;
@@ -134,15 +139,18 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
     }
 
-    function cancelUnstakePending(uint256 amount) public {
+    function cancelPendingUnstake(uint256 amount) public {
         require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
         claimReward();
 
         uint256 fee = amount * cancelUnstakeFee / ONE_HUNDRED;
         uint256 stakeAmount = amount - fee;
 
-        rewardSum += fee * FACTOR / totalStakedAmount;
-        accumulatedFee += fee;
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
+                accumulatedFee += fee;
 
         userInfo[_msgSender()].unstakedAmount -= amount;
         if (userInfo[_msgSender()].unstakedAmount == 0) {
@@ -152,7 +160,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         userInfo[_msgSender()].stakedAmount += stakeAmount;
         totalStakedAmount += stakeAmount;
         userInfo[_msgSender()].lastRewardSum = rewardSum;
-        emit CancelUnstakePending(_msgSender(), fee, stakeAmount);
+        emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
     }
 
     // claim reward and reset user's reward sum
