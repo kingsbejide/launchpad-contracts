@@ -248,7 +248,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function calculateUserReward() public view returns (uint256) {
         return
             userInfo[_msgSender()].stakedAmount *
-            (rewardSum - userInfo[_msgSender()].lastRewardSum) / FACTOR;;
+            (rewardSum - userInfo[_msgSender()].lastRewardSum) / FACTOR;
     }
 
     /** 
