@@ -9,6 +9,10 @@ const MaxUint256 = ethers.constants.MaxUint256
 const WeiPerEth = ethers.constants.WeiPerEther
 const one = ethers.constants.One
 
+const convToBN = (num: number) => {
+  return ethers.BigNumber.from(num).mul(WeiPerEth)
+}
+
 export default describe('vIDIA', function () {
   // unset timeout from the test
   this.timeout(0)
@@ -222,5 +226,58 @@ export default describe('vIDIA', function () {
     await vidia.removeFromWhitelist(vester.address)
     await checkWhitelist([])
     await checkFailure()
+  })
+
+  it('test claimstaked', async () => {
+    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    const underlying = await TestTokenFactory.connect(owner).deploy(
+      'Test',
+      'TT',
+      convToBN(200)
+    )
+    const vidiaFactory = await ethers.getContractFactory('vIDIA')
+    const vidia = await vidiaFactory.deploy(
+      'Vested IDIA',
+      'VIDIA',
+      owner.address,
+      underlying.address
+    )
+
+    await underlying.approve(vidia.address, MaxUint256)
+    await vidia.stake(convToBN(200))
+
+    const testCases = [convToBN(1), convToBN(12), convToBN(0), convToBN(123)]
+
+    let userPrevVidiaBalance = await vidia.balanceOf(owner.address)
+    let userPrevUnderlying = await underlying.balanceOf(owner.address)
+    let contractPrevUnderlying = await underlying.balanceOf(vidia.address)
+    let prevFee = await vidia.accumulatedFee()
+
+
+    const feePercentBasisPts = await vidia.skipUnstakeDelayFee()
+
+    for (let i = 0; i < testCases.length; i++) {
+      
+      const fee = feePercentBasisPts.mul(testCases[i]).div(ethers.BigNumber.from('10000')) // 10000 basis pts = 100%
+      const receiveAmt = testCases[i].sub(fee)
+
+      const reward = await vidia.calculateUserReward()
+
+      expect(await vidia.claimStaked(testCases[i]))
+        .to.emit(vidia, 'ClaimStaked')
+        .withArgs(owner.address, fee, receiveAmt)
+        .to.emit(underlying, 'Transfer')
+        .withArgs(vidia.address, owner.address, receiveAmt)
+
+      expect(await vidia.balanceOf(owner.address)).to.equal(userPrevVidiaBalance.sub(testCases[i]))
+      expect(await underlying.balanceOf(owner.address)).to.equal(userPrevUnderlying.add(receiveAmt).add(reward))
+      expect(await vidia.accumulatedFee()).to.equal(prevFee.add(fee))
+      expect(await underlying.balanceOf(vidia.address)).to.equal(contractPrevUnderlying.sub(receiveAmt).sub(reward))
+
+      userPrevVidiaBalance = userPrevVidiaBalance.sub(testCases[i])
+      userPrevUnderlying = userPrevUnderlying.add(receiveAmt).add(reward)
+      contractPrevUnderlying = contractPrevUnderlying.sub(receiveAmt).sub(reward)
+      prevFee = prevFee.add(fee)
+    }
   })
 })

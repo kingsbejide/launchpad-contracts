@@ -188,14 +188,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // claim reward and reset user's reward sum
     function claimReward() public {
         uint256 reward = calculateUserReward();
-        require(reward <= 0, 'No reward to claim');
-        // reset user's rewards sum
-        userInfo[_msgSender()].lastRewardSum = rewardSum;
-        // transfer reward to user
-        ERC20 claimedTokens = ERC20(tokenAddress);
-        claimedTokens.safeTransfer(_msgSender(), reward);
-
-        emit ClaimReward(_msgSender(), reward);
+        if (reward >= 0) {
+            // reset user's rewards sum
+            userInfo[_msgSender()].lastRewardSum = rewardSum;
+            // transfer reward to user
+            ERC20 claimedTokens = ERC20(tokenAddress);
+            claimedTokens.safeTransfer(_msgSender(), reward);
+            emit ClaimReward(_msgSender(), reward);
+        }
     }
 
     /** 
