@@ -109,7 +109,23 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
     function claimStaked(uint256 amount) public {
-        emit ClaimStaked(_msgSender(), 0, amount);
+        claimReward();
+
+        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
+        uint256 withdrawAmount = amount - fee;
+
+        totalStakedAmount -= amount;
+        userInfo[_msgSender()].stakedAmount -= amount;
+
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
+        accumulatedFee += fee;
+
+        burn(amount);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
+        emit ClaimStaked(_msgSender(), fee, withdrawAmount);
     }
 
     /** 
@@ -119,7 +135,24 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
     function claimPendingUnstake(uint256 amount) public {
-        emit ClaimPendingUnstake(_msgSender(), 0, amount);
+        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake without paying fee');
+
+        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
+        uint256 withdrawAmount = amount - fee;
+
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
+        accumulatedFee += fee;
+
+        userInfo[_msgSender()].unstakedAmount -= amount;
+        if (userInfo[_msgSender()].unstakedAmount == 0) {
+            userInfo[_msgSender()].unstakeAt = 0;
+        }
+        burn(amount);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
+        emit ClaimPendingUnstake(_msgSender(), fee, withdrawAmount);
     }
 
     /** 
@@ -129,20 +162,40 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to cancel unstaking process for
      */
     function cancelPendingUnstake(uint256 amount) public {
+        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
+        claimReward();
+
+        uint256 fee = amount * cancelUnstakeFee / ONE_HUNDRED;
+        uint256 stakeAmount = amount - fee;
+
+        if (totalStakedAmount != 0) {
+            // mul by FACTOR of 10**18 to reduce truncation
+            rewardSum += fee * FACTOR / totalStakedAmount;
+        }
+                accumulatedFee += fee;
+
+        userInfo[_msgSender()].unstakedAmount -= amount;
+        if (userInfo[_msgSender()].unstakedAmount == 0) {
+            userInfo[_msgSender()].unstakeAt = 0;
+        }
+
+        userInfo[_msgSender()].stakedAmount += stakeAmount;
+        totalStakedAmount += stakeAmount;
+        userInfo[_msgSender()].lastRewardSum = rewardSum;
         emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
     }
 
     // claim reward and reset user's reward sum
     function claimReward() public {
         uint256 reward = calculateUserReward();
-        require(reward <= 0, 'No reward to claim');
-        // reset user's rewards sum
-        userInfo[_msgSender()].lastRewardSum = rewardSum;
-        // transfer reward to user
-        ERC20 claimedTokens = ERC20(tokenAddress);
-        claimedTokens.safeTransfer(_msgSender(), reward);
-
-        emit ClaimReward(_msgSender(), reward);
+        if (reward >= 0) {
+            // reset user's rewards sum
+            userInfo[_msgSender()].lastRewardSum = rewardSum;
+            // transfer reward to user
+            ERC20 claimedTokens = ERC20(tokenAddress);
+            claimedTokens.safeTransfer(_msgSender(), reward);
+            emit ClaimReward(_msgSender(), reward);
+        }
     }
 
     /** 
@@ -193,7 +246,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return uint256 amount of underlying tokens the user has earned from fees
      */
     function calculateUserReward() public view returns (uint256) {
-        return 0;
+        return
+            userInfo[_msgSender()].stakedAmount *
+            (rewardSum - userInfo[_msgSender()].lastRewardSum) / FACTOR;
     }
 
     /** 
