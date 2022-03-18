@@ -13,16 +13,15 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 private constant FACTOR = 10**18;
     uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
 
-    // Fees for different actions. All fees denoted in basis points
-    uint256 public instantUnstakeFee = 2000; // initialzed at 20%
-    uint256 public cancelUnstakeFee = 200; // initialized at 2%
-
     // delay for unstaking token
     uint256 public unstakingDelay = 86400 * 14; // 2 weeks in seconds
 
+    // Fees for different actions. All fees denoted in basis points
+    uint256 public skipUnstakeDelayFee = 2000; // initialzed at 20%
+    uint256 public cancelUnstakeFee = 200; // initialized at 2%
+
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
-    uint256 public totalStakers;
     uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
     address public tokenAddress;
     address admin;
@@ -53,15 +52,15 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event Unstake(address _from, uint256 amount);
 
-    event InstantUnstake(address _from, uint256 fee, uint256 withdrawAmount);
+    event ClaimStaked(address _from, uint256 fee, uint256 withdrawAmount);
 
     event SetWhitelistSetter(address whitelistSetter);
 
     event SetWhitelist(bytes32 whitelistRootHash);
 
-    event Claim(address _from);
+    event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
-    event InstantUnstakePending(address _from, uint256 fee, uint256 withdrawAmount);
+    event ClaimPendingUnstake(address _from, uint256 fee, uint256 withdrawAmount);
 
     event CancelPendingUnstake(address _from, uint256 fee, uint256 stakedAmount);
 
@@ -80,8 +79,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         admin = _admin;
     }
 
-
-
     function stake(uint256 amount) public {
         claimReward();
         totalStakedAmount += amount;
@@ -97,14 +94,24 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     /** 
-     @notice Function for a user to pay fee and instantly unstake tokens *NOT* in the unstaking queue
+     @notice Function for a user to retrieve underlying tokens after waiting for the unstake delay
+     @notice *no* fees required
      @notice For tokens in the unstaking queue, use instantUnstakePending()
+     */
+    function claimUnstaked() public {
+        emit ClaimUnstaked(_msgSender(), 0);
+    }
+
+    /** 
+     @notice Function for a user to pay fee and receive underlying tokens *NOT* in the unstaking queue
+     @notice fees required
+     @notice For tokens in the unstaking queue, use claimPendingUnstake()
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
-    function instantUnstake(uint256 amount) public {
+    function claimStaked(uint256 amount) public {
         claimReward();
-        
-        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
+
+        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
         totalStakedAmount -= amount;
@@ -118,18 +125,19 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         burn(amount);
         ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
-        emit InstantUnstake(_msgSender(), fee, withdrawAmount);
+        emit ClaimStaked(_msgSender(), fee, withdrawAmount);
     }
 
     /** 
-     @notice Function for a user to pay fee and instantly unstake tokens in the unstaking queue
+     @notice Function for a user to retrieve underlying tokens associated with vidia in the unstaking queue
+     @notice fees required
      @dev Requires user to have tokens in the unstake queue which cannot be claimed now
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
-    function instantUnstakePending(uint256 amount) public {
+    function claimPendingUnstake(uint256 amount) public {
         require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake without paying fee');
-        
-        uint256 fee = amount * instantUnstakeFee / ONE_HUNDRED;
+
+        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
         if (totalStakedAmount != 0) {
@@ -137,16 +145,22 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             rewardSum += fee * FACTOR / totalStakedAmount;
         }
         accumulatedFee += fee;
-        
+
         userInfo[_msgSender()].unstakedAmount -= amount;
         if (userInfo[_msgSender()].unstakedAmount == 0) {
             userInfo[_msgSender()].unstakeAt = 0;
         }
         burn(amount);
         ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
-        emit InstantUnstakePending(_msgSender(), fee, withdrawAmount);
+        emit ClaimPendingUnstake(_msgSender(), fee, withdrawAmount);
     }
 
+    /** 
+     @notice Function for a user to cancel unstaking process for vidia
+     @notice fees required
+     @dev Requires user to have tokens in the unstake queue which cannot be claimed now
+     @param amount the amount of tokens to cancel unstaking process for
+     */
     function cancelPendingUnstake(uint256 amount) public {
         require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
         claimReward();
@@ -189,13 +203,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires fee setter role and fee must be below 10000 basis pts
      @param newFee the new fee
      */
-    function updateInstantUnstakeFee(uint256 newFee) external {
+    function updateSkipUnstakeDelayFee(uint256 newFee) external {
         require(
             hasRole(FEE_SETTER_ROLE, _msgSender()),
             'Must have fee setter role'
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
-        instantUnstakeFee = newFee;
+        skipUnstakeDelayFee = newFee;
     }
 
     /** 
@@ -298,8 +312,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return ERC20.transferFrom(from, to, amount);
     }
 
-    //// EIP2771 meta transactions
-
+    /** 
+     @notice msg.sender for EIP2771 meta transactions. Parses out original msg.sender when transaction is sent by relayer
+     @return address of msg.sender
+     */
     function _msgSender()
         internal
         view
@@ -309,6 +325,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return ERC2771ContextUpdateable._msgSender();
     }
 
+    /** 
+     @notice msg.data for EIP2771 meta transactions. Parses out original msg.data when transaction is sent by relayer
+     @return bytes of msg.data
+     */
     function _msgData()
         internal
         view
@@ -319,7 +339,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     //// EIP1363 payable token
-
     function supportsInterface(bytes4 interfaceId)
         public
         view
