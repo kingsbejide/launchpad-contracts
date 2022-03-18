@@ -122,6 +122,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit ClaimPendingUnstake(_msgSender(), 0, amount);
     }
 
+    /** 
+     @notice Function for a user to cancel unstaking process for vidia
+     @notice fees required
+     @dev Requires user to have tokens in the unstake queue which cannot be claimed now
+     @param amount the amount of tokens to cancel unstaking process for
+     */
+    function cancelPendingUnstake(uint256 amount) public {
+        emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
+    }
+
     // claim reward and reset user's reward sum
     function claimReward() public {
         uint256 reward = calculateUserReward();
