@@ -31,7 +31,7 @@ export default describe('vIDIA', function () {
     // for it to be deployed(), which happens once its transaction has been
     // mined.
     const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
+
     owner = (await ethers.getSigners())[0]
     vester = (await ethers.getSigners())[1]
     const TestTokenFactory = await ethers.getContractFactory('GenericToken')
@@ -43,7 +43,7 @@ export default describe('vIDIA', function () {
     vIDIA = await vIDIAFactory.deploy(
       'vIDIA contract',
       'VIDIA',
-      testAddress,
+      owner.address,
       VestToken.address
     )
   })
@@ -65,94 +65,42 @@ export default describe('vIDIA', function () {
     )
   })
 
-  // it('deploys and can set penalty of a token', async function () {
+  it('sets penalty of a token', async function () {
 
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
+    const penalty = 10
 
-  //   const [owner] = await ethers.getSigners()
-  //   const penalty = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
+    await vIDIA.updateSkipUnstakeDelayFee(penalty)
 
-  //   await vIDIA.setPenalty(penalty, VestToken.address)
+    const value = (await vIDIA.skipUnstakeDelayFee()).toNumber()
+    expect(value).to.eq(10)
+  })
 
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.penalty).to.equal(10)
-  // })
+  it('cannot set penalty of a token', async function () {
+    const penalty = 10
 
-  // it('deploys and cannot set penalty of a token, thus still 0', async function () {
+    await expect
+    (vIDIA.connect(vester).updateSkipUnstakeDelayFee(penalty)
+    ).to.be.revertedWith('Must have fee setter role')
 
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
+  })
 
-  //   owner = (await ethers.getSigners())[0]
-  //   vester = (await ethers.getSigners())[1]
-  //   const penalty = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
-  //   await vIDIA.connect(vester).setPenalty(penalty, VestToken.address)
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.penalty).to.equal(0)
-  // })
-
-  // it('deploys and can set delay of a token', async function () {
-
-
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
-
+  it('sets delay of a token', async function () {
  
+    const delay = 10
 
-  //   const [owner] = await ethers.getSigners()
-  //   const delay = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
+    await vIDIA.updateUnvestingDelay(delay)
+    const value = (await vIDIA.unstakingDelay()).toNumber()
+    expect(value).to.eq(10)
+  })
 
+  it('deploys and cannot set delay of a token, thus still 0', async function () {
 
-  //   await vIDIA.setUnvestingDelay(delay, VestToken.address)
+    const delay = 10
 
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.unvestingDelay).to.equal(10)
-  // })
-
-  // it('deploys and cannot set delay of a token, thus still 0', async function () {
- 
-
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
-
-  
-
-  //   owner = (await ethers.getSigners())[0]
-  //   vester = (await ethers.getSigners())[1]
-  //   const delay = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
-
-  //   await vIDIA.connect(vester).setUnvestingDelay(delay, VestToken.address)
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.unvestingDelay).to.equal(0)
-  // })
+    await expect
+    (vIDIA.connect(vester).updateUnvestingDelay(delay)
+    ).to.be.revertedWith('Must have delay setter role')
+  })
 
   it('deploys and stakes tokens', async function () {
     const transferAmt = 10000000
