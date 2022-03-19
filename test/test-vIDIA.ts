@@ -22,6 +22,33 @@ export default describe('vIDIA', function () {
   let owner: SignerWithAddress
   let vester: SignerWithAddress
 
+  beforeEach(async function () {
+    // Get the ContractFactory and Signers here.
+    // Token = await ethers.getContractFactory("Token");
+    [owner, vester] = await ethers.getSigners();
+
+    // To deploy our contract, we just have to call Token.deploy() and await
+    // for it to be deployed(), which happens once its transaction has been
+    // mined.
+    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
+    owner = (await ethers.getSigners())[0]
+    vester = (await ethers.getSigners())[1]
+    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    VestToken = await TestTokenFactory.connect(owner).deploy(
+      'Test Vest Token',
+      'Vest',
+      '21000000000000000000000000' // 21 million * 10**18
+    )
+    vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      testAddress,
+      VestToken.address
+    )
+  })
+
+
   it('deploys', async function () {
     // get owner
     const [owner] = await ethers.getSigners()
@@ -128,25 +155,9 @@ export default describe('vIDIA', function () {
   // })
 
   it('deploys and stakes tokens', async function () {
-    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
-    owner = (await ethers.getSigners())[0]
-    vester = (await ethers.getSigners())[1]
-    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-    VestToken = await TestTokenFactory.connect(owner).deploy(
-      'Test Vest Token',
-      'Vest',
-      '21000000000000000000000000' // 21 million * 10**18
-    )
-    vIDIA = await vIDIAFactory.deploy(
-      'vIDIA contract',
-      'VIDIA',
-      testAddress,
-      VestToken.address
-    )
-
-    await VestToken.transfer(vester.address, ethers.constants.MaxUint256) //times out here
-    await VestToken.connect(vester).approve(vIDIA.address, '10000000')
+    const transferAmt = 10000000
+    await VestToken.transfer(vester.address, transferAmt) 
+    await VestToken.connect(vester).approve(vIDIA.address, ethers.constants.MaxUint256)
     const firstStakeAmt = 100
     const secondStakeAmt = 250
     await vIDIA.connect(vester).stake(firstStakeAmt)
