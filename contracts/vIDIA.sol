@@ -109,7 +109,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         totalStakedAmount -= amount;
         userInfo[_msgSender()].stakedAmount -= amount;
         //start unvesting period
-        uint256 unstakeAt = unstakingDelay;
+        uint256 unstakeAt = block.timestamp + unstakingDelay;
         userInfo[_msgSender()].unstakeAt = unstakeAt;
 
         userInfo[_msgSender()].unstakedAmount = amount;
