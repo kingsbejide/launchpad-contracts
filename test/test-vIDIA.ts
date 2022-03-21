@@ -3,7 +3,8 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Contract } from '@ethersproject/contracts'
-import { mineNext } from './helpers'
+import { mineNext, getBlockTime } from './helpers'
+import { first } from 'lodash'
 
 const MaxUint256 = ethers.constants.MaxUint256
 const WeiPerEth = ethers.constants.WeiPerEther
@@ -22,6 +23,33 @@ export default describe('vIDIA', function () {
   let owner: SignerWithAddress
   let vester: SignerWithAddress
 
+  beforeEach(async function () {
+    // Get the ContractFactory and Signers here.
+    // Token = await ethers.getContractFactory("Token");
+    [owner, vester] = await ethers.getSigners();
+
+    // To deploy our contract, we just have to call Token.deploy() and await
+    // for it to be deployed(), which happens once its transaction has been
+    // mined.
+    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
+
+    owner = (await ethers.getSigners())[0]
+    vester = (await ethers.getSigners())[1]
+    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
+    VestToken = await TestTokenFactory.connect(owner).deploy(
+      'Test Vest Token',
+      'Vest',
+      '21000000000000000000000000' // 21 million * 10**18
+    )
+    vIDIA = await vIDIAFactory.deploy(
+      'vIDIA contract',
+      'VIDIA',
+      owner.address,
+      VestToken.address
+    )
+  })
+
+
   it('deploys', async function () {
     // get owner
     const [owner] = await ethers.getSigners()
@@ -38,115 +66,47 @@ export default describe('vIDIA', function () {
     )
   })
 
-  // it('deploys and can set penalty of a token', async function () {
+  it('sets penalty of a token', async function () {
 
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
+    const penalty = 10
 
-  //   const [owner] = await ethers.getSigners()
-  //   const penalty = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
+    await vIDIA.updateSkipUnstakeDelayFee(penalty)
 
-  //   await vIDIA.setPenalty(penalty, VestToken.address)
+    const value = (await vIDIA.skipUnstakeDelayFee()).toNumber()
+    expect(value).to.eq(10)
+  })
 
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.penalty).to.equal(10)
-  // })
+  it('cannot set penalty of a token', async function () {
+    const penalty = 10
 
-  // it('deploys and cannot set penalty of a token, thus still 0', async function () {
+    await expect
+    (vIDIA.connect(vester).updateSkipUnstakeDelayFee(penalty)
+    ).to.be.revertedWith('Must have fee setter role')
 
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
+  })
 
-  //   owner = (await ethers.getSigners())[0]
-  //   vester = (await ethers.getSigners())[1]
-  //   const penalty = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
-  //   await vIDIA.connect(vester).setPenalty(penalty, VestToken.address)
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.penalty).to.equal(0)
-  // })
-
-  // it('deploys and can set delay of a token', async function () {
-
-
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
-
+  it('sets delay of a token', async function () {
  
+    const delay = 10
 
-  //   const [owner] = await ethers.getSigners()
-  //   const delay = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
+    await vIDIA.updateUnvestingDelay(delay)
+    const value = (await vIDIA.unstakingDelay()).toNumber()
+    expect(value).to.eq(10)
+  })
 
+  it('deploys and cannot set delay of a token, thus still 0', async function () {
 
-  //   await vIDIA.setUnvestingDelay(delay, VestToken.address)
+    const delay = 10
 
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.unvestingDelay).to.equal(10)
-  // })
-
-  // it('deploys and cannot set delay of a token, thus still 0', async function () {
- 
-
-  //   const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-  //   vIDIA = await vIDIAFactory.deploy()
-
-  
-
-  //   owner = (await ethers.getSigners())[0]
-  //   vester = (await ethers.getSigners())[1]
-  //   const delay = 10
-  //   const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-  //   VestToken = await TestTokenFactory.connect(owner).deploy(
-  //     'Test Vest Token',
-  //     'Vest',
-  //     '21000000000000000000000000' // 21 million * 10**18
-  //   )
-
-  //   await vIDIA.connect(vester).setUnvestingDelay(delay, VestToken.address)
-
-  //   const value = await vIDIA.tokenConfigurations(VestToken.address)
-  //   expect(value.unvestingDelay).to.equal(0)
-  // })
+    await expect
+    (vIDIA.connect(vester).updateUnvestingDelay(delay)
+    ).to.be.revertedWith('Must have delay setter role')
+  })
 
   it('deploys and stakes tokens', async function () {
-    const vIDIAFactory = await ethers.getContractFactory('vIDIA')
-    const testAddress = '0x777788889999AaAAbBbbCcccddDdeeeEfFFfCcCc'
-    owner = (await ethers.getSigners())[0]
-    vester = (await ethers.getSigners())[1]
-    const TestTokenFactory = await ethers.getContractFactory('GenericToken')
-    VestToken = await TestTokenFactory.connect(owner).deploy(
-      'Test Vest Token',
-      'Vest',
-      '21000000000000000000000000' // 21 million * 10**18
-    )
-    vIDIA = await vIDIAFactory.deploy(
-      'vIDIA contract',
-      'VIDIA',
-      testAddress,
-      VestToken.address
-    )
-
-    await VestToken.transfer(vester.address, ethers.constants.MaxUint256) //times out here
-    await VestToken.connect(vester).approve(vIDIA.address, '10000000')
+    const transferAmt = 10000000
+    await VestToken.transfer(vester.address, transferAmt) 
+    await VestToken.connect(vester).approve(vIDIA.address, ethers.constants.MaxUint256)
     const firstStakeAmt = 100
     const secondStakeAmt = 250
     await vIDIA.connect(vester).stake(firstStakeAmt)
@@ -156,6 +116,31 @@ export default describe('vIDIA', function () {
     await vIDIA.connect(vester).stake(secondStakeAmt)
     totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
     expect(totalStaked).to.eq(firstStakeAmt + secondStakeAmt)
+  })
+
+  it('stakes and unstakes tokens', async function () {
+    const transferAmt = 10000000
+    await VestToken.transfer(vester.address, transferAmt) 
+    await VestToken.connect(vester).approve(vIDIA.address, ethers.constants.MaxUint256)
+    const firstStakeAmt = 100
+    const secondStakeAmt = 250
+    await vIDIA.connect(vester).stake(firstStakeAmt)
+    let totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(firstStakeAmt)
+
+    await vIDIA.connect(vester).stake(secondStakeAmt)
+    totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    expect(totalStaked).to.eq(firstStakeAmt + secondStakeAmt)
+    await vIDIA.connect(vester).unstake(secondStakeAmt)
+    const userData = (await vIDIA.userInfo(vester.address))
+    expect(userData.unstakedAmount).to.eq(secondStakeAmt)
+    const unstakeTime = (await getBlockTime()) + (await vIDIA.unstakingDelay()).toNumber()
+    expect(userData.unstakeAt).to.eq(unstakeTime)
+    await expect
+    (vIDIA.connect(vester).unstake(firstStakeAmt)
+    ).to.be.revertedWith('User already has pending tokens unstaking')
+
+
   })
 
   it('test whitelist feature', async () => {
