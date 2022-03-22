@@ -26,7 +26,7 @@ export default describe('vIDIA', function () {
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
     // Token = await ethers.getContractFactory("Token");
-    [owner, vester] = await ethers.getSigners();
+    [owner, vester] = await ethers.getSigners()
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
