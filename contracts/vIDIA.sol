@@ -5,7 +5,7 @@ import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 import '../library/IFTokenStandard.sol';
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
@@ -33,8 +33,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 lastRewardSum;
     }
 
-    bytes32 public constant FEE_SETTER_ROLE =
-        keccak256('FEE_SETTER_ROLE');
+    bytes32 public constant FEE_SETTER_ROLE = keccak256('FEE_SETTER_ROLE');
 
     bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
 
@@ -60,9 +59,17 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
-    event ClaimPendingUnstake(address _from, uint256 fee, uint256 withdrawAmount);
+    event ClaimPendingUnstake(
+        address _from,
+        uint256 fee,
+        uint256 withdrawAmount
+    );
 
-    event CancelPendingUnstake(address _from, uint256 fee, uint256 stakedAmount);
+    event CancelPendingUnstake(
+        address _from,
+        uint256 fee,
+        uint256 stakedAmount
+    );
 
     event ClaimReward(address _from, uint256 amount);
 
@@ -89,7 +96,23 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit Stake(_msgSender(), amount);
     }
 
+    /** 
+     @notice Function for a user unstake tokens and put them in unstaking queue
+     @param amount the amount of tokens to unstake from staked tokens
+     */
     function unstake(uint256 amount) public {
+        require(
+            userInfo[_msgSender()].unstakedAmount == 0 || userInfo[_msgSender()].unstakeAt == 0,
+            'User has pending tokens unstaking'
+        );
+        claimReward();
+        totalStakedAmount -= amount;
+        userInfo[_msgSender()].stakedAmount -= amount;
+        //start unvesting period
+        userInfo[_msgSender()].unstakeAt = block.timestamp + unstakingDelay;
+
+        userInfo[_msgSender()].unstakedAmount = amount;
+        burn(userInfo[_msgSender()].unstakedAmount);
         emit Unstake(_msgSender(), amount);
     }
 
@@ -111,7 +134,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function claimStaked(uint256 amount) public {
         claimReward();
 
-        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
+        uint256 fee = (amount * skipUnstakeDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
         totalStakedAmount -= amount;
@@ -119,7 +142,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         if (totalStakedAmount != 0) {
             // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
+            rewardSum += (fee * FACTOR) / totalStakedAmount;
         }
         accumulatedFee += fee;
 
@@ -135,14 +158,17 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
     function claimPendingUnstake(uint256 amount) public {
-        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake without paying fee');
+        require(
+            userInfo[_msgSender()].unstakeAt > block.timestamp,
+            'Can unstake without paying fee'
+        );
 
-        uint256 fee = amount * skipUnstakeDelayFee / ONE_HUNDRED;
+        uint256 fee = (amount * skipUnstakeDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
 
         if (totalStakedAmount != 0) {
             // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
+            rewardSum += (fee * FACTOR) / totalStakedAmount;
         }
         accumulatedFee += fee;
 
@@ -162,17 +188,20 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to cancel unstaking process for
      */
     function cancelPendingUnstake(uint256 amount) public {
-        require(userInfo[_msgSender()].unstakeAt > block.timestamp, 'Can unstake and restake paying fee');
+        require(
+            userInfo[_msgSender()].unstakeAt > block.timestamp,
+            'Can unstake and restake paying fee'
+        );
         claimReward();
 
-        uint256 fee = amount * cancelUnstakeFee / ONE_HUNDRED;
+        uint256 fee = (amount * cancelUnstakeFee) / ONE_HUNDRED;
         uint256 stakeAmount = amount - fee;
 
         if (totalStakedAmount != 0) {
             // mul by FACTOR of 10**18 to reduce truncation
-            rewardSum += fee * FACTOR / totalStakedAmount;
+            rewardSum += (fee * FACTOR) / totalStakedAmount;
         }
-                accumulatedFee += fee;
+        accumulatedFee += fee;
 
         userInfo[_msgSender()].unstakedAmount -= amount;
         if (userInfo[_msgSender()].unstakedAmount == 0) {
@@ -247,8 +276,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      */
     function calculateUserReward() public view returns (uint256) {
         return
-            userInfo[_msgSender()].stakedAmount *
-            (rewardSum - userInfo[_msgSender()].lastRewardSum) / FACTOR;
+            (userInfo[_msgSender()].stakedAmount *
+                (rewardSum - userInfo[_msgSender()].lastRewardSum)) / FACTOR;
     }
 
     /** 
@@ -258,7 +287,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return boolean. True = account was added, False = account already exists in set
      */
     function addToWhitelist(address account) public returns (bool) {
-        require(hasRole(WHITELIST_SETTER_ROLE, _msgSender()), 'Must have whitelist setter role');
+        require(
+            hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
+            'Must have whitelist setter role'
+        );
         return EnumerableSet.add(whitelistAddresses, account);
     }
 
@@ -269,7 +301,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @return boolean. True = account was removed, False = account doesnt exist in set
      */
     function removeFromWhitelist(address account) public returns (bool) {
-        require(hasRole(WHITELIST_SETTER_ROLE, _msgSender()), 'Must have whitelist setter role');
+        require(
+            hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
+            'Must have whitelist setter role'
+        );
         return EnumerableSet.remove(whitelistAddresses, account);
     }
 
@@ -288,9 +323,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount transfer amount
      @return boolean representing if transfer was successful
      */
-    function transfer(address to, uint256 amount) public override returns (bool) {
+    function transfer(address to, uint256 amount)
+        public
+        override
+        returns (bool)
+    {
         require(
-            EnumerableSet.contains(whitelistAddresses, to) || EnumerableSet.contains(whitelistAddresses, _msgSender()), 
+            EnumerableSet.contains(whitelistAddresses, to) ||
+                EnumerableSet.contains(whitelistAddresses, _msgSender()),
             'Origin and dest address not in whitelist'
         );
         return ERC20.transfer(to, amount);
@@ -304,9 +344,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount transfer amount
      @return boolean representing if transfer was successful
      */
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
         require(
-            EnumerableSet.contains(whitelistAddresses, from) || EnumerableSet.contains(whitelistAddresses, to), 
+            EnumerableSet.contains(whitelistAddresses, from) ||
+                EnumerableSet.contains(whitelistAddresses, to),
             'Origin and dest address not in whitelist'
         );
         return ERC20.transferFrom(from, to, amount);
@@ -347,5 +392,4 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     {
         return super.supportsInterface(interfaceId);
     }
-  
 }
