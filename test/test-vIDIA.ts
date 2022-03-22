@@ -72,8 +72,8 @@ export default describe('vIDIA', function () {
 
     await vIDIA.updateSkipUnstakeDelayFee(penalty)
 
-    const value = (await vIDIA.skipUnstakeDelayFee()).toNumber()
-    expect(value).to.eq(10)
+
+    expect((await vIDIA.skipUnstakeDelayFee()).toNumber()).to.eq(penalty)
   })
 
   it('cannot set penalty of a token', async function () {
@@ -138,7 +138,7 @@ export default describe('vIDIA', function () {
     expect(userData.unstakeAt).to.eq(unstakeTime)
     await expect
     (vIDIA.connect(vester).unstake(firstStakeAmt)
-    ).to.be.revertedWith('User already has pending tokens unstaking')
+    ).to.be.revertedWith('User has pending tokens unstaking')
 
 
   })
