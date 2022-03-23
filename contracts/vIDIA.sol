@@ -130,7 +130,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
 
         claimReward();
-        burn(userInfo[_msgSender()].unstakedAmount);
         ERC20(tokenAddress).safeTransfer(
             _msgSender(),
             userInfo[_msgSender()].unstakedAmount

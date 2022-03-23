@@ -3,7 +3,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Contract } from '@ethersproject/contracts'
-import { mineNext, getBlockTime } from './helpers'
+import { mineNext, mineTimeDelta, getBlockTime } from './helpers'
 import { first } from 'lodash'
 
 const MaxUint256 = ethers.constants.MaxUint256
@@ -115,7 +115,7 @@ export default describe('vIDIA', function () {
     expect(totalStaked).to.eq(firstStakeAmt + secondStakeAmt)
   })
 
-  it('stakes and unstakes tokens', async function () {
+  it('stakes and unstakes and claims tokens', async function () {
     const transferAmt = 10000000
     await VestToken.transfer(vester.address, transferAmt)
     await VestToken.connect(vester).approve(
@@ -140,6 +140,14 @@ export default describe('vIDIA', function () {
     await expect(
       vIDIA.connect(vester).unstake(firstStakeAmt)
     ).to.be.revertedWith('User has pending tokens unstaking')
+
+  // test claimUnstaked
+  mineTimeDelta((await vIDIA.unstakingDelay()).toNumber())
+  const preUnstake = (await (VestToken.balanceOf(vester.address))).toNumber()
+  await vIDIA.connect(vester).claimUnstaked()
+  expect((await (VestToken.balanceOf(vester.address))).toNumber()).to.eq(preUnstake + secondStakeAmt)
+
+
   })
 
   it('test whitelist feature', async () => {
