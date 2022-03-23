@@ -130,12 +130,15 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
 
         claimReward();
+        uint256 withdrawAmount = userInfo[_msgSender()].unstakedAmount;
         ERC20(tokenAddress).safeTransfer(
             _msgSender(),
-            userInfo[_msgSender()].unstakedAmount
+            withdrawAmount
         );
+        userInfo[_msgSender()].unstakedAmount = 0;
+        userInfo[_msgSender()].unstakeAt = 0;
 
-        emit ClaimUnstaked(_msgSender(), userInfo[_msgSender()].unstakedAmount);
+        emit ClaimUnstaked(_msgSender(), withdrawAmount);
     }
 
     /** 
