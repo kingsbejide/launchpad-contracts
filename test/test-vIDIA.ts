@@ -141,16 +141,16 @@ export default describe('vIDIA', function () {
       vIDIA.connect(vester).unstake(firstStakeAmt)
     ).to.be.revertedWith('User has pending tokens unstaking')
 
-  // test claimUnstaked
-  mineTimeDelta((await vIDIA.unstakingDelay()).toNumber())
-  const preUnstake = (await (VestToken.balanceOf(vester.address))).toNumber()
-  await vIDIA.connect(vester).claimUnstaked()
-  expect((await (VestToken.balanceOf(vester.address))).toNumber()).to.eq(preUnstake + secondStakeAmt)
-  userData = await vIDIA.userInfo(vester.address)
-  expect(userData.unstakeAt).to.eq(0)
-  expect(userData.unstakedAmount).to.eq(0)
-
-
+    // test claimUnstaked
+    mineTimeDelta((await vIDIA.unstakingDelay()).toNumber())
+    const preUnstake = (await VestToken.balanceOf(vester.address)).toNumber()
+    await vIDIA.connect(vester).claimUnstaked()
+    expect((await VestToken.balanceOf(vester.address)).toNumber()).to.eq(
+      preUnstake + secondStakeAmt
+    )
+    userData = await vIDIA.userInfo(vester.address)
+    expect(userData.unstakeAt).to.eq(0)
+    expect(userData.unstakedAmount).to.eq(0)
   })
 
   it('test whitelist feature', async () => {
