@@ -106,6 +106,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
                 userInfo[_msgSender()].unstakeAt == 0,
             'User has pending tokens unstaking'
         );
+        claimReward();
         totalStakedAmount -= amount;
         userInfo[_msgSender()].stakedAmount -= amount;
         //start unvesting period
@@ -127,10 +128,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             block.timestamp > userInfo[_msgSender()].unstakeAt,
             'Tokens have not finished vesting'
         );
-
-        claimReward();
         uint256 withdrawAmount = userInfo[_msgSender()].unstakedAmount;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
+        ERC20(tokenAddress).safeTransfer(
+            _msgSender(),
+            withdrawAmount
+        );
         userInfo[_msgSender()].unstakedAmount = 0;
         userInfo[_msgSender()].unstakeAt = 0;
 
