@@ -255,14 +255,14 @@ export default describe('vIDIA', function () {
       const fee = (await vIDIA.skipDelayFee()).mul(withdrawAmt[i]).div(_10000) // 10000 basis pts = 100%
       const receiveAmt = withdrawAmt[i].sub(fee)
 
-      const newRewardSum = 
-        (await vIDIA.rewardSum())
+      const newRewardPerShare = 
+        (await vIDIA.rewardPerShare())
           .add(fee.mul(FACTOR)
             .div(rewarderStakeAmt))
 
       const reward = 
         rewarderStakeAmt.mul(
-          newRewardSum.sub((await vIDIA.userInfo(vester.address)).lastRewardSum))
+          newRewardPerShare.sub((await vIDIA.userInfo(vester.address)).lastRewardPerShare))
             .div(FACTOR)
 
       expect(await vIDIA.claimStaked(withdrawAmt[i]))
@@ -316,14 +316,14 @@ export default describe('vIDIA', function () {
       const fee = (await vIDIA.skipDelayFee()).mul(withdrawAmt[i]).div(_10000) // 10000 basis pts = 100%
       const receiveAmt = withdrawAmt[i].sub(fee)
 
-      const newRewardSum = 
-        (await vIDIA.rewardSum())
+      const newRewardPerShare = 
+        (await vIDIA.rewardPerShare())
           .add(fee.mul(FACTOR)
             .div(rewarderStakeAmt))
 
       const reward = 
         rewarderStakeAmt.mul(
-          newRewardSum.sub((await vIDIA.userInfo(vester.address)).lastRewardSum))
+          newRewardPerShare.sub((await vIDIA.userInfo(vester.address)).lastRewardPerShare))
             .div(FACTOR)
 
       expect(await vIDIA.claimPendingUnstake(withdrawAmt[i]))
@@ -383,14 +383,14 @@ export default describe('vIDIA', function () {
       const fee = (await vIDIA.cancelUnstakeFee()).mul(withdrawAmt[i]).div(_10000) // 10000 basis pts = 100%
       const receiveAmt = withdrawAmt[i].sub(fee)
 
-      const newRewardSum = 
-        (await vIDIA.rewardSum())
+      const newRewardPerShare = 
+        (await vIDIA.rewardPerShare())
           .add(fee.mul(FACTOR)
             .div(rewarderStakeAmt))
 
       const reward = 
         rewarderStakeAmt.mul(
-          newRewardSum.sub((await vIDIA.userInfo(vester.address)).lastRewardSum))
+          newRewardPerShare.sub((await vIDIA.userInfo(vester.address)).lastRewardPerShare))
             .div(FACTOR)
       
       expect(await vIDIA.cancelPendingUnstake(withdrawAmt[i]))
