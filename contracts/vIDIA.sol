@@ -23,7 +23,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
     uint256 public rewardPerShare; // (1/T1 + 1/T2 + 1/T3)
-    address public tokenAddress;
+    address public immutable tokenAddress;
 
     address admin;
 
@@ -54,9 +54,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ClaimStaked(address _from, uint256 fee, uint256 withdrawAmount);
 
-    event SetWhitelistSetter(address whitelistSetter);
+    event UpdateSkipDelayFee(uint256 newFee);
+    
+    event UpdateCancelUnstakeFee(uint256 newFee);
 
-    event SetWhitelist(bytes32 whitelistRootHash);
+    event UpdateUnstakingDelay(uint24 newDelay);
+
+    event RemoveFromWhitelist(address account);
+
+    event AddToWhitelist(address account);
+
 
     event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
@@ -142,7 +149,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function claimUnstaked() public notHalted {
         //require curr time more than unstaking delay
         require(
-            userInfo[_msgSender()].unstakeAt != 0 &&
+            userInfo[_msgSender()].unstakedAmount != 0 &&
                 block.timestamp > userInfo[_msgSender()].unstakeAt,
             'Tokens have not finished vesting'
         );
@@ -192,7 +199,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      */
     function claimPendingUnstake(uint256 amount) public notHalted {
         require(
-            userInfo[_msgSender()].unstakeAt != 0 &&
+            userInfo[_msgSender()].unstakedAmount != 0 &&
                 userInfo[_msgSender()].unstakeAt > block.timestamp,
             'Can unstake without paying fee'
         );
@@ -277,6 +284,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
         skipDelayFee = newFee;
+
+        emit UpdateSkipDelayFee(newFee);
     }
 
     /** 
@@ -291,6 +300,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
         cancelUnstakeFee = newFee;
+
+        emit UpdateCancelUnstakeFee(newFee);
     }
 
     /** 
@@ -304,6 +315,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Must have delay setter role'
         );
         unstakingDelay = newDelay;
+        
+        emit UpdateUnstakingDelay(newDelay);
     }
 
     /** 
@@ -330,6 +343,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
             'Must have whitelist setter role'
         );
+        emit AddToWhitelist(account);
+
         return EnumerableSet.add(whitelistAddresses, account);
     }
 
@@ -348,7 +363,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             ERC20(tokenAddress).balanceOf(account) == 0,
             '0 token balance required to remove from whitelist'
         );
+
+        emit RemoveFromWhitelist(account);
+
         return EnumerableSet.remove(whitelistAddresses, account);
+
+
     }
 
     /** 
