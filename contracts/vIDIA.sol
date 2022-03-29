@@ -6,12 +6,14 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 import '../library/IFTokenStandard.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/utils/Math.sol';
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
 
     uint256 private constant FACTOR = 10**30;
     uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
+    uint256 private constant ONE_MONTH = 86400 * 30;
 
     // delay for unstaking token
     uint256 public unstakingDelay = 86400 * 14; // 2 weeks in seconds
@@ -107,13 +109,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         admin = _admin;
     }
 
-    function stake(uint256 amount) public notHalted {
+    function stake(uint256 amount) external notHalted {
         claimReward();
+        ERC20(tokenAddress).safeTransferFrom(_msgSender(), address(this), amount);
         totalStakedAmount += amount;
         userInfo[_msgSender()].stakedAmount += amount;
         _mint(_msgSender(), amount);
-        ERC20 stakedTokens = ERC20(tokenAddress);
-        stakedTokens.safeTransferFrom(_msgSender(), address(this), amount);
         emit Stake(_msgSender(), amount);
     }
 
@@ -121,7 +122,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice Function for a user unstake tokens and put them in unstaking queue
      @param amount the amount of tokens to unstake from staked tokens
      */
-    function unstake(uint256 amount) public notHalted {
+    function unstake(uint256 amount) external notHalted {
         require(
             userInfo[_msgSender()].unstakedAmount == 0,
             'User has pending tokens unstaking'
@@ -146,7 +147,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice *no* fees required
      @notice For tokens in the unstaking queue, use instantUnstakePending()
      */
-    function claimUnstaked() public notHalted {
+    function claimUnstaked() external notHalted {
         //require curr time more than unstaking delay
         require(
             userInfo[_msgSender()].unstakedAmount != 0 &&
@@ -155,9 +156,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
 
         uint256 withdrawAmount = userInfo[_msgSender()].unstakedAmount;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         userInfo[_msgSender()].unstakedAmount = 0;
         userInfo[_msgSender()].unstakeAt = 0;
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
 
         emit ClaimUnstaked(_msgSender(), withdrawAmount);
     }
@@ -168,7 +169,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice For tokens in the unstaking queue, use claimPendingUnstake()
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
-    function claimStaked(uint256 amount) public notHalted {
+    function claimStaked(uint256 amount) external notHalted {
         claimReward();
 
         uint256 fee = (amount * skipDelayFee) / ONE_HUNDRED;
@@ -197,7 +198,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires user to have tokens in the unstake queue which cannot be claimed now
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
-    function claimPendingUnstake(uint256 amount) public notHalted {
+    function claimPendingUnstake(uint256 amount) external notHalted {
         require(
             userInfo[_msgSender()].unstakedAmount != 0 &&
                 userInfo[_msgSender()].unstakeAt > block.timestamp,
@@ -231,7 +232,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires user to have tokens in the unstake queue which cannot be claimed now
      @param amount the amount of tokens to cancel unstaking process for
      */
-    function cancelPendingUnstake(uint256 amount) public notHalted {
+    function cancelPendingUnstake(uint256 amount) external notHalted {
         require(
             userInfo[_msgSender()].unstakeAt > block.timestamp,
             'Can restake without paying fee'
@@ -314,6 +315,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
+        require(
+            newDelay <= ONE_MONTH,
+            'Delay must be <= 1 month'
+        );
         unstakingDelay = newDelay;
         
         emit UpdateUnstakingDelay(newDelay);
@@ -338,7 +343,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param account is the address to add to whitelist
      @return boolean. True = account was added, False = account already exists in set
      */
-    function addToWhitelist(address account) public returns (bool) {
+    function addToWhitelist(address account) external returns (bool) {
         require(
             hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
             'Must have whitelist setter role'
@@ -354,7 +359,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param account is the address to remove from whitelist
      @return boolean. True = account was removed, False = account doesnt exist in set
      */
-    function removeFromWhitelist(address account) public returns (bool) {
+    function removeFromWhitelist(address account) external returns (bool) {
         require(
             hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
             'Must have whitelist setter role'
@@ -375,7 +380,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice Getter for all transfer whitelisted addresses
      @return Array of all transfer whitelisted addresses
      */
-    function getAllWhitelistedAddrs() public view returns (address[] memory) {
+    function getAllWhitelistedAddrs() external view returns (address[] memory) {
         return EnumerableSet.values(whitelistAddresses);
     }
 
@@ -437,9 +442,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev only can be called when contract is halted
      */
     function emergencyWithdrawStaked() external onlyWhenHalted {
+        uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].stakedAmount;
         userInfo[_msgSender()].stakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmt);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), Math.min(availAmt, withdrawAmt));
     }
 
     /** 
@@ -447,9 +453,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev only can be called when contract is halted
      */
     function emergencyWithdrawUnstaking() external onlyWhenHalted {
+        uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].unstakedAmount;
         userInfo[_msgSender()].unstakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmt);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), Math.min(availAmt, withdrawAmt));
     }
 
     /** 
@@ -457,7 +464,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev used in emergency when users send wrong tokens into this contract
      @dev only can be called by contract admin
      */
-    function emergencyWithdrawOtherTokens(ERC20 token, address to) public {
+    function emergencyWithdrawOtherTokens(ERC20 token, address to) external {
         require(
             hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
             'Must have admin role'
