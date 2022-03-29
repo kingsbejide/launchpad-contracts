@@ -73,7 +73,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ClaimReward(address _from, uint256 amount);
 
-    // In case of emergency we pause funtionality and open up emergency withdrawals
+    // In case of emergency we pause functionality and open up emergency withdrawals
     bool public isHalt;
 
     modifier notHalted() {
