@@ -286,12 +286,12 @@ export default describe('vIDIA', function () {
         .to.emit(underlying, 'Transfer')
         .withArgs(vIDIA.address, owner.address, receiveAmt)
 
-      expect(await vIDIA.calculateUserReward()).to.eq(_0) // fees should never accrue to for fee payer
+      expect(await vIDIA.calculateUserReward(owner.address)).to.eq(_0) // fees should never accrue to fee payer
 
       // these are the state changes every loop
       sumFees = sumFees.add(fee)
       expect(await vIDIA.accumulatedFee()).to.equal(sumFees)
-      expect(await vIDIA.connect(vester).calculateUserReward()).to.eq(sumFees) // all fees to vester
+      expect(await vIDIA.calculateUserReward(vester.address)).to.eq(sumFees) // all fees to vester
       checkWithinTolerance(reward, sumFees) // default tolerance = 10wei
 
       userVidiaBalance = userVidiaBalance.sub(withdrawAmt[i])
@@ -348,12 +348,12 @@ export default describe('vIDIA', function () {
         .withArgs(vIDIA.address, owner.address, receiveAmt)
 
       // no change
-      expect(await vIDIA.calculateUserReward()).to.eq(_0) // fees should never accrue to for fee payer
+      expect(await vIDIA.calculateUserReward(owner.address)).to.eq(_0) // fees should never accrue to fee payer
       expect(await vIDIA.balanceOf(owner.address)).to.equal(userVidiaBalance)
 
       sumFees = sumFees.add(fee)
       expect(await vIDIA.accumulatedFee()).to.equal(sumFees)
-      expect(await vIDIA.connect(vester).calculateUserReward()).to.eq(sumFees) // all fees to vester
+      expect(await vIDIA.calculateUserReward(vester.address)).to.eq(sumFees) // all fees to vester
       checkWithinTolerance(reward, sumFees) // default tolerance = 10wei
 
       userUnderlying = userUnderlying.add(receiveAmt)
@@ -412,11 +412,11 @@ export default describe('vIDIA', function () {
         .to.emit(vIDIA, 'CancelPendingUnstake')
         .withArgs(owner.address, fee, receiveAmt)
 
-      expect(await vIDIA.calculateUserReward()).to.eq(_0) // fees should never accrue to for fee payer
+      expect(await vIDIA.calculateUserReward(owner.address)).to.eq(_0) // fees should never accrue to fee payer
 
       sumFees = sumFees.add(fee)
       expect(await vIDIA.accumulatedFee()).to.equal(sumFees)
-      expect(await vIDIA.connect(vester).calculateUserReward()).to.eq(sumFees) // all fees to vester
+      expect(await vIDIA.calculateUserReward(vester.address)).to.eq(sumFees) // all fees to vester
       checkWithinTolerance(reward, sumFees) // default tolerance = 10wei
 
       // no change

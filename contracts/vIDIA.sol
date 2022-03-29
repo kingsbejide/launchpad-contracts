@@ -56,7 +56,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     event ClaimStaked(address _from, uint256 fee, uint256 withdrawAmount);
 
     event UpdateSkipDelayFee(uint256 newFee);
-    
+
     event UpdateCancelUnstakeFee(uint256 newFee);
 
     event UpdateUnstakingDelay(uint24 newDelay);
@@ -64,7 +64,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     event RemoveFromWhitelist(address account);
 
     event AddToWhitelist(address account);
-
 
     event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
@@ -110,7 +109,11 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     function stake(uint256 amount) external notHalted {
         claimReward();
-        ERC20(tokenAddress).safeTransferFrom(_msgSender(), address(this), amount);
+        ERC20(tokenAddress).safeTransferFrom(
+            _msgSender(),
+            address(this),
+            amount
+        );
         totalStakedAmount += amount;
         userInfo[_msgSender()].stakedAmount += amount;
         _mint(_msgSender(), amount);
@@ -263,7 +266,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     // claim reward and reset user's reward sum
     function claimReward() public {
-        uint256 reward = calculateUserReward();
+        uint256 reward = calculateUserReward(_msgSender());
         // reset user's rewards sum
         userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
         // transfer reward to user
@@ -314,12 +317,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(DELAY_SETTER_ROLE, _msgSender()),
             'Must have delay setter role'
         );
-        require(
-            newDelay <= ONE_MONTH,
-            'Delay must be <= 1 month'
-        );
+        require(newDelay <= ONE_MONTH, 'Delay must be <= 1 month');
         unstakingDelay = newDelay;
-        
+
         emit UpdateUnstakingDelay(newDelay);
     }
 
@@ -329,11 +329,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev we perform div 10**30 as rewardsum is inflated by 10**30 to reduce truncation
      @return uint256 amount of underlying tokens the user has earned from fees
      */
-    function calculateUserReward() public view returns (uint256) {
+    function calculateUserReward(address user) public view returns (uint256) {
         return
-            (userInfo[_msgSender()].stakedAmount *
-                (rewardPerShare - userInfo[_msgSender()].lastRewardPerShare)) /
-            FACTOR;
+            (userInfo[user].stakedAmount *
+                (rewardPerShare - userInfo[user].lastRewardPerShare)) / FACTOR;
     }
 
     /** 
@@ -371,8 +370,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         emit RemoveFromWhitelist(account);
 
         return EnumerableSet.remove(whitelistAddresses, account);
-
-
     }
 
     /** 
@@ -444,7 +441,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].stakedAmount;
         userInfo[_msgSender()].stakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), availAmt > withdrawAmt ? withdrawAmt : availAmt);
+        ERC20(tokenAddress).safeTransfer(
+            _msgSender(),
+            availAmt > withdrawAmt ? withdrawAmt : availAmt
+        );
     }
 
     /** 
@@ -455,7 +455,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].unstakedAmount;
         userInfo[_msgSender()].unstakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), availAmt > withdrawAmt ? withdrawAmt : availAmt);
+        ERC20(tokenAddress).safeTransfer(
+            _msgSender(),
+            availAmt > withdrawAmt ? withdrawAmt : availAmt
+        );
     }
 
     /** 
@@ -472,10 +475,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             address(token) != tokenAddress,
             'can only withdraw other ERC20s'
         );
-        require(
-            address(token) != address(this), 
-            'cannot withdraw vIDIA'
-        );
+        require(address(token) != address(this), 'cannot withdraw vIDIA');
         token.safeTransfer(to, token.balanceOf(address(this)));
     }
 
