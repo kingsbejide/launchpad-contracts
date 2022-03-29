@@ -27,8 +27,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     uint256 public rewardPerShare; // (1/T1 + 1/T2 + 1/T3)
     address public immutable underlying;
 
-    address admin;
-
     struct UserInfo {
         uint256 stakedAmt;
         uint256 unstakeAt;
@@ -97,7 +95,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(DELAY_SETTER_ROLE, _admin);
         _setupRole(WHITELIST_SETTER_ROLE, _admin);
         underlying = _underlying;
-        admin = _admin;
     }
 
     function stake(uint256 amount) external notHalted {
@@ -270,7 +267,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         external
         onlyRole(FEE_SETTER_ROLE)
     {
-        require(newFee <= 10000, 'Fee must be less than 100%');
+        require(newFee <= ONE_HUNDRED, 'Fee must be less than 100%');
         skipDelayFee = newFee;
 
         emit UpdateSkipDelayFee(newFee);
@@ -285,7 +282,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         external
         onlyRole(FEE_SETTER_ROLE)
     {
-        require(newFee <= 10000, 'Fee must be less than 100%');
+        require(newFee <= ONE_HUNDRED, 'Fee must be less than 100%');
         cancelUnstakeFee = newFee;
 
         emit UpdateCancelUnstakeFee(newFee);

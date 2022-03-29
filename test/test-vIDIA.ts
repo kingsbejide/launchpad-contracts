@@ -37,7 +37,7 @@ const checkWithinTolerance = (
   )
 }
 
-export default describe('vIDIA', function () {
+export default describe('vIDIA', async () => {
   // unset timeout from the test
   this.timeout(0)
 
@@ -47,7 +47,7 @@ export default describe('vIDIA', function () {
   let vester: SignerWithAddress
   let vester2: SignerWithAddress
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     // Get the ContractFactory and Signers here.
     // Token = await ethers.getContractFactory("Token");
     [owner, vester, vester2] = await ethers.getSigners()
@@ -75,7 +75,7 @@ export default describe('vIDIA', function () {
     await underlying.connect(vester).approve(vIDIA.address, MaxUint256)
   })
 
-  it('test static funcs', async function () {
+  it('test static funcs', async () => {
     expect(await vIDIA.supportsInterface('0xb0202a11')).to.eq(true)
   })
 
@@ -133,7 +133,7 @@ export default describe('vIDIA', function () {
       .withArgs(vIDIA.address, owner.address, transferAmt)
   })
 
-  it('test setters', async function () {
+  it('test setters', async () => {
     const value = [0, 100, 200, 300]
     const fns = [
       { set: vIDIA.updateSkipDelayFee, get: vIDIA.skipDelayFee },
@@ -155,7 +155,7 @@ export default describe('vIDIA', function () {
     }
   })
 
-  it('test stake tokens', async function () {
+  it('test stake tokens', async () => {
     const transferAmt = 10000000
     await underlying.transfer(vester.address, transferAmt)
     await underlying
@@ -171,7 +171,7 @@ export default describe('vIDIA', function () {
     }
   })
 
-  it('test stake/unstake', async function () {
+  it('test stake/unstake', async () => {
     const transferAmt = 10000000
 
     await underlying.transfer(vester.address, transferAmt)
