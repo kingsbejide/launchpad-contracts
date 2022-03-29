@@ -11,6 +11,7 @@ const MaxUint256 = ethers.constants.MaxUint256
 const WeiPerEth = ethers.constants.WeiPerEther
 const _0 = ethers.constants.Zero
 const _1 = ethers.constants.One
+const _2 = ethers.constants.Two
 const _10 = BigNumber.from(10)
 const _10000 = BigNumber.from(10000)
 const FACTOR = BigNumber.from(_10.pow(BigNumber.from(30)))
@@ -34,11 +35,12 @@ export default describe('vIDIA', function () {
   let underlying: Contract
   let owner: SignerWithAddress
   let vester: SignerWithAddress
+  let vester2: SignerWithAddress
 
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
     // Token = await ethers.getContractFactory("Token");
-    [owner, vester] = await ethers.getSigners()
+    [owner, vester, vester2] = await ethers.getSigners()
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
@@ -184,25 +186,29 @@ export default describe('vIDIA', function () {
     await underlying.approve(vIDIA.address, MaxUint256)
     await vIDIA.stake(WeiPerEth)
     await vIDIA.approve(vester.address, MaxUint256)
+    await vIDIA.approve(vester2.address, MaxUint256)
 
-    const checkFailure = async () => {
-      await expect(vIDIA.transfer(vester.address, _1)).to.be.revertedWith(
+    const checkFailure = async (s: SignerWithAddress) => {
+      await expect(vIDIA.transfer(s.address, _1)).to.be.revertedWith(
         'Origin and dest address not in whitelist'
       )
       await expect(
-        vIDIA.connect(vester).transferFrom(owner.address, vester.address, _1)
+        vIDIA.connect(s).transferFrom(owner.address, s.address, _1)
       ).to.be.revertedWith('Origin and dest address not in whitelist')
     }
 
-    const checkSuccess = async () => {
-      await expect(vIDIA.transfer(vester.address, _1))
+    const checkSuccess = async (s: SignerWithAddress) => {
+      await expect(vIDIA.transfer(s.address, _1))
         .to.emit(vIDIA, 'Transfer')
-        .withArgs(owner.address, vester.address, _1)
+        .withArgs(owner.address, s.address, _1)
       await expect(
-        vIDIA.connect(vester).transferFrom(owner.address, vester.address, _1)
+        vIDIA.connect(s).transferFrom(owner.address, s.address, _1)
       )
         .to.emit(vIDIA, 'Transfer')
-        .withArgs(owner.address, vester.address, _1)
+        .withArgs(owner.address, s.address, _1)
+      await expect(vIDIA.connect(s).transfer(owner.address, _2))
+        .to.emit(vIDIA, 'Transfer')
+        .withArgs(s.address, owner.address, _2)
     }
 
     const checkWhitelist = async (addrArr: string[]) => {
@@ -213,27 +219,32 @@ export default describe('vIDIA', function () {
 
     // case 1: no whitelist, should fail transfer
     await checkWhitelist([])
-    await checkFailure()
+    await checkFailure(vester)
+    await checkFailure(vester2)
 
     // case 2: source addr in whitelist, should not fail xfer
-    await vIDIA.addToWhitelist(owner.address)
-    await checkWhitelist([owner.address])
-    await checkSuccess()
+    await vIDIA.addToWhitelist(vester.address)
+    await checkWhitelist([vester.address])
+    await checkSuccess(vester)
+    await checkFailure(vester2)
 
     // case 3: source addr and dest addr in whitelist, should not fail xfer
-    await vIDIA.addToWhitelist(vester.address)
-    await checkWhitelist([owner.address, vester.address])
-    await checkSuccess()
+    await vIDIA.addToWhitelist(vester2.address)
+    await checkWhitelist([vester.address, vester2.address])
+    await checkSuccess(vester)
+    await checkSuccess(vester2)
 
     // case 4: dest addr in whitelist, should not fail xfer
-    await vIDIA.removeFromWhitelist(owner.address)
-    await checkWhitelist([vester.address])
-    await checkSuccess()
+    await vIDIA.removeFromWhitelist(vester.address)
+    await checkWhitelist([vester2.address])
+    await checkFailure(vester)
+    await checkSuccess(vester2)
 
     // case 5: remove all addr from whitelist, should fail xfer
-    await vIDIA.removeFromWhitelist(vester.address)
+    await vIDIA.removeFromWhitelist(vester2.address)
     await checkWhitelist([])
-    await checkFailure()
+    await checkFailure(vester)
+    await checkFailure(vester2)
   })
 
   it('test claimstaked', async () => {
