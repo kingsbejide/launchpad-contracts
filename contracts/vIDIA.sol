@@ -280,11 +280,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires fee setter role and fee must be below 10000 basis pts
      @param newFee the new fee
      */
-    function updateSkipDelayFee(uint256 newFee) external {
-        require(
-            hasRole(FEE_SETTER_ROLE, _msgSender()),
-            'Must have fee setter role'
-        );
+    function updateSkipDelayFee(uint256 newFee) external onlyRole(FEE_SETTER_ROLE) {
         require(newFee <= 10000, 'Fee must be less than 100%');
         skipDelayFee = newFee;
 
@@ -296,11 +292,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires fee setter role and fee must be below 10000 basis pts
      @param newFee the new fee
      */
-    function updateCancelUnstakeFee(uint256 newFee) external {
-        require(
-            hasRole(FEE_SETTER_ROLE, _msgSender()),
-            'Must have fee setter role'
-        );
+    function updateCancelUnstakeFee(uint256 newFee) external onlyRole(FEE_SETTER_ROLE) {
         require(newFee <= 10000, 'Fee must be less than 100%');
         cancelUnstakeFee = newFee;
 
@@ -312,11 +304,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev Requires delay setter role and existing wait times will not change
      @param newDelay the new delay
      */
-    function updateUnstakingDelay(uint24 newDelay) external {
-        require(
-            hasRole(DELAY_SETTER_ROLE, _msgSender()),
-            'Must have delay setter role'
-        );
+    function updateUnstakingDelay(uint24 newDelay) external onlyRole(DELAY_SETTER_ROLE) {
         require(newDelay <= ONE_MONTH, 'Delay must be <= 1 month');
         unstakingDelay = newDelay;
 
@@ -341,13 +329,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param account is the address to add to whitelist
      @return boolean. True = account was added, False = account already exists in set
      */
-    function addToWhitelist(address account) external returns (bool) {
-        require(
-            hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
-            'Must have whitelist setter role'
-        );
+    function addToWhitelist(address account) external onlyRole(WHITELIST_SETTER_ROLE) returns (bool) {
         emit AddToWhitelist(account);
-
         return EnumerableSet.add(whitelistAddresses, account);
     }
 
@@ -357,11 +340,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param account is the address to remove from whitelist
      @return boolean. True = account was removed, False = account doesnt exist in set
      */
-    function removeFromWhitelist(address account) external returns (bool) {
-        require(
-            hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
-            'Must have whitelist setter role'
-        );
+    function removeFromWhitelist(address account) external onlyRole(WHITELIST_SETTER_ROLE) returns (bool) {
         require(
             ERC20(address(this)).balanceOf(account) == 0,
             '0 token balance required to remove from whitelist'
@@ -425,11 +404,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice function to halt contract and allow emergency withdrawals
      @dev only can be called by contract admin
      */
-    function halt() external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            'Must have admin role'
-        );
+    function halt() external onlyRole(DEFAULT_ADMIN_ROLE) {
         isHalt = true;
     }
 
@@ -466,11 +441,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @dev used in emergency when users send wrong tokens into this contract
      @dev only can be called by contract admin
      */
-    function emergencyWithdrawOtherTokens(ERC20 token, address to) external {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            'Must have admin role'
-        );
+    function emergencyWithdrawOtherTokens(ERC20 token, address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(
             address(token) != tokenAddress,
             'can only withdraw other ERC20s'
