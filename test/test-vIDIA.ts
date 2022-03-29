@@ -51,7 +51,7 @@ export default describe('vIDIA', function () {
     // Get the ContractFactory and Signers here.
     // Token = await ethers.getContractFactory("Token");
     [owner, vester, vester2] = await ethers.getSigners()
-q
+
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
     // mined.
@@ -165,7 +165,7 @@ q
 
     for (let i = 0; i < stakeAmt.length; i++) {
       await vIDIA.connect(vester).stake(stakeAmt[i])
-      expect((await vIDIA.totalStakedAmount()).toNumber()).to.eq(
+      expect((await vIDIA.totalStakedAmt()).toNumber()).to.eq(
         stakeAmt.reduce((prev, curr, idx) => (idx <= i ? prev + curr : prev))
       )
     }
@@ -181,15 +181,15 @@ q
     const firstStakeAmt = 100
     const secondStakeAmt = 250
     await vIDIA.connect(vester).stake(firstStakeAmt)
-    let totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    let totalStaked = (await vIDIA.totalStakedAmt()).toNumber()
     expect(totalStaked).to.eq(firstStakeAmt)
 
     await vIDIA.connect(vester).stake(secondStakeAmt)
-    totalStaked = (await vIDIA.totalStakedAmount()).toNumber()
+    totalStaked = (await vIDIA.totalStakedAmt()).toNumber()
     expect(totalStaked).to.eq(firstStakeAmt + secondStakeAmt)
     await vIDIA.connect(vester).unstake(secondStakeAmt)
     let userData = await vIDIA.userInfo(vester.address)
-    expect(userData.unstakedAmount).to.eq(secondStakeAmt)
+    expect(userData.unstakingAmt).to.eq(secondStakeAmt)
     const unstakeTime =
       (await getBlockTime()) + (await vIDIA.unstakingDelay()).toNumber()
     expect(userData.unstakeAt).to.eq(unstakeTime)
@@ -206,7 +206,7 @@ q
     )
     userData = await vIDIA.userInfo(vester.address)
     expect(userData.unstakeAt).to.eq(0)
-    expect(userData.unstakedAmount).to.eq(0)
+    expect(userData.unstakingAmt).to.eq(0)
   })
 
   it('test whitelist feature', async () => {
@@ -352,8 +352,8 @@ q
 
     let userVidiaBalance = await vIDIA.balanceOf(owner.address)
     let userUnderlying = await underlying.balanceOf(owner.address)
-    let userStakedAmt = (await vIDIA.userInfo(owner.address)).stakedAmount
-    let userUnstakingAmt = (await vIDIA.userInfo(owner.address)).unstakedAmount
+    let userStakedAmt = (await vIDIA.userInfo(owner.address)).stakedAmt
+    let userUnstakingAmt = (await vIDIA.userInfo(owner.address)).unstakingAmt
     let contractUnderlying = await underlying.balanceOf(vIDIA.address)
     let sumFees = await vIDIA.accumulatedFee()
 
@@ -396,7 +396,7 @@ q
       expect(await underlying.balanceOf(owner.address)).to.equal(userUnderlying)
 
       userUnstakingAmt = userUnstakingAmt.sub(withdrawAmt[i])
-      expect((await vIDIA.userInfo(owner.address)).unstakedAmount).to.equal(
+      expect((await vIDIA.userInfo(owner.address)).unstakingAmt).to.equal(
         userUnstakingAmt
       )
 
@@ -432,8 +432,8 @@ q
 
     let userVidiaBalance = await vIDIA.balanceOf(owner.address)
     let userUnderlying = await underlying.balanceOf(owner.address)
-    let userUnstakingAmt = (await vIDIA.userInfo(owner.address)).unstakedAmount
-    let userStakedAmt = (await vIDIA.userInfo(owner.address)).stakedAmount
+    let userUnstakingAmt = (await vIDIA.userInfo(owner.address)).unstakingAmt
+    let userStakedAmt = (await vIDIA.userInfo(owner.address)).stakedAmt
     let contractUnderlying = await underlying.balanceOf(vIDIA.address)
     let sumFees = await vIDIA.accumulatedFee()
 
@@ -481,11 +481,11 @@ q
         .to.equal(userVidiaBalance)
 
       userUnstakingAmt = userUnstakingAmt.sub(withdrawAmt[i])
-      expect((await vIDIA.userInfo(owner.address)).unstakedAmount) // reduce unstakedAmt by amt
+      expect((await vIDIA.userInfo(owner.address)).unstakingAmt) // reduce unstakedAmt by amt
         .to.equal(userUnstakingAmt)
 
       userStakedAmt = userStakedAmt.add(receiveAmt)
-      expect((await vIDIA.userInfo(owner.address)).stakedAmount) // inc stakedAmt by receiveAmt
+      expect((await vIDIA.userInfo(owner.address)).stakedAmt) // inc stakedAmt by receiveAmt
         .to.equal(userStakedAmt)
     }
 
