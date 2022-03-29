@@ -153,7 +153,6 @@ export default describe('vIDIA', () => {
   })
 
   it('test stake tokens', async () => {
-    const transferAmt = 10000000
     const stakeAmt = [100, 250]
 
     for (let i = 0; i < stakeAmt.length; i++) {
@@ -165,7 +164,6 @@ export default describe('vIDIA', () => {
   })
 
   it('test stake/unstake', async () => {
-    const transferAmt = 10000000
     const firstStakeAmt = 100
     const secondStakeAmt = 250 // TODO: format same as prev
     await vIDIA.connect(vester).stake(firstStakeAmt)
