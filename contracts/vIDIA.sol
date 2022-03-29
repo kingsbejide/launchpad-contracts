@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 import '../library/IFTokenStandard.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/utils/Math.sol';
 
 contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
@@ -444,7 +445,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].stakedAmount;
         userInfo[_msgSender()].stakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), availAmt > withdrawAmt ? withdrawAmt : availAmt);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), Math.min(availAmt, withdrawAmt));
     }
 
     /** 
@@ -455,7 +456,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 availAmt = ERC20(tokenAddress).balanceOf(address(this));
         uint256 withdrawAmt = userInfo[_msgSender()].unstakedAmount;
         userInfo[_msgSender()].unstakedAmount = 0;
-        ERC20(tokenAddress).safeTransfer(_msgSender(), availAmt > withdrawAmt ? withdrawAmt : availAmt);
+        ERC20(tokenAddress).safeTransfer(_msgSender(), Math.min(availAmt, withdrawAmt));
     }
 
     /** 
