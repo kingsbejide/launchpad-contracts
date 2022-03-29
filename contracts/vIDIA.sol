@@ -22,8 +22,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     uint256 public accumulatedFee;
     uint256 public totalStakedAmount;
-    uint256 public rewardSum; // (1/T1 + 1/T2 + 1/T3)
-    address public tokenAddress;
+    uint256 public rewardPerShare; // (1/T1 + 1/T2 + 1/T3)
+    address public immutable tokenAddress;
 
     address admin;
 
@@ -31,7 +31,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         uint256 stakedAmount;
         uint256 unstakeAt;
         uint256 unstakedAmount;
-        uint256 lastRewardSum;
+        uint256 lastRewardPerShare;
     }
 
     bytes32 public constant FEE_SETTER_ROLE = keccak256('FEE_SETTER_ROLE');
@@ -54,9 +54,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     event ClaimStaked(address _from, uint256 fee, uint256 withdrawAmount);
 
-    event SetWhitelistSetter(address whitelistSetter);
+    event UpdateSkipDelayFee(uint256 newFee);
+    
+    event UpdateCancelUnstakeFee(uint256 newFee);
 
-    event SetWhitelist(bytes32 whitelistRootHash);
+    event UpdateUnstakingDelay(uint24 newDelay);
+
+    event RemoveFromWhitelist(address account);
+
+    event AddToWhitelist(address account);
+
 
     event ClaimUnstaked(address _from, uint256 withdrawAmount);
 
@@ -78,12 +85,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     bool public isHalt;
 
     modifier notHalted() {
-        require(!isHalt, "Contract is halted");
+        require(!isHalt, 'Contract is halted');
         _;
     }
 
     modifier onlyWhenHalted() {
-        require(isHalt, "Contract is not halted yet");
+        require(isHalt, 'Contract is not halted yet');
         _;
     }
 
@@ -116,9 +123,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      */
     function unstake(uint256 amount) public notHalted {
         require(
-            userInfo[_msgSender()].unstakedAmount == 0 ||
-                userInfo[_msgSender()].unstakeAt == 0,
+            userInfo[_msgSender()].unstakedAmount == 0,
             'User has pending tokens unstaking'
+        );
+        require(
+            userInfo[_msgSender()].unstakeAt == 0,
+            'User has tokens in unstaking queue'
         );
         claimReward();
         totalStakedAmount -= amount;
@@ -139,14 +149,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function claimUnstaked() public notHalted {
         //require curr time more than unstaking delay
         require(
-            block.timestamp > userInfo[_msgSender()].unstakeAt,
+            userInfo[_msgSender()].unstakedAmount != 0 &&
+                block.timestamp > userInfo[_msgSender()].unstakeAt,
             'Tokens have not finished vesting'
         );
+
         uint256 withdrawAmount = userInfo[_msgSender()].unstakedAmount;
-        ERC20(tokenAddress).safeTransfer(
-            _msgSender(),
-            withdrawAmount
-        );
+        ERC20(tokenAddress).safeTransfer(_msgSender(), withdrawAmount);
         userInfo[_msgSender()].unstakedAmount = 0;
         userInfo[_msgSender()].unstakeAt = 0;
 
@@ -164,14 +173,15 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         uint256 fee = (amount * skipDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
-        uint256 divisor = totalStakedAmount - userInfo[_msgSender()].stakedAmount;
+        uint256 divisor = totalStakedAmount -
+            userInfo[_msgSender()].stakedAmount;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
-            rewardSum += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardSum = rewardSum;
+            rewardPerShare += (fee * FACTOR) / divisor;
+            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
         }
-        
+
         totalStakedAmount -= amount;
         userInfo[_msgSender()].stakedAmount -= amount;
         accumulatedFee += fee;
@@ -189,19 +199,21 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      */
     function claimPendingUnstake(uint256 amount) public notHalted {
         require(
-            userInfo[_msgSender()].unstakeAt > block.timestamp,
+            userInfo[_msgSender()].unstakedAmount != 0 &&
+                userInfo[_msgSender()].unstakeAt > block.timestamp,
             'Can unstake without paying fee'
         );
         claimReward();
 
         uint256 fee = (amount * skipDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmount = amount - fee;
-        uint256 divisor = totalStakedAmount - userInfo[_msgSender()].stakedAmount;
+        uint256 divisor = totalStakedAmount -
+            userInfo[_msgSender()].stakedAmount;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
-            rewardSum += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardSum = rewardSum;
+            rewardPerShare += (fee * FACTOR) / divisor;
+            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
         }
         accumulatedFee += fee;
 
@@ -228,12 +240,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
         uint256 fee = (amount * cancelUnstakeFee) / ONE_HUNDRED;
         uint256 stakeAmount = amount - fee;
-        uint256 divisor = totalStakedAmount - userInfo[_msgSender()].stakedAmount;
+        uint256 divisor = totalStakedAmount -
+            userInfo[_msgSender()].stakedAmount;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
-            rewardSum += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardSum = rewardSum;
+            rewardPerShare += (fee * FACTOR) / divisor;
+            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
         }
         accumulatedFee += fee;
 
@@ -252,7 +265,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function claimReward() public {
         uint256 reward = calculateUserReward();
         // reset user's rewards sum
-        userInfo[_msgSender()].lastRewardSum = rewardSum;
+        userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
         // transfer reward to user
         ERC20 claimedTokens = ERC20(tokenAddress);
         claimedTokens.safeTransfer(_msgSender(), reward);
@@ -271,6 +284,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
         skipDelayFee = newFee;
+
+        emit UpdateSkipDelayFee(newFee);
     }
 
     /** 
@@ -285,6 +300,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         );
         require(newFee <= 10000, 'Fee must be less than 100%');
         cancelUnstakeFee = newFee;
+
+        emit UpdateCancelUnstakeFee(newFee);
     }
 
     /** 
@@ -298,6 +315,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Must have delay setter role'
         );
         unstakingDelay = newDelay;
+        
+        emit UpdateUnstakingDelay(newDelay);
     }
 
     /** 
@@ -309,7 +328,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function calculateUserReward() public view returns (uint256) {
         return
             (userInfo[_msgSender()].stakedAmount *
-                (rewardSum - userInfo[_msgSender()].lastRewardSum)) / FACTOR;
+                (rewardPerShare - userInfo[_msgSender()].lastRewardPerShare)) /
+            FACTOR;
     }
 
     /** 
@@ -323,6 +343,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
             'Must have whitelist setter role'
         );
+        emit AddToWhitelist(account);
+
         return EnumerableSet.add(whitelistAddresses, account);
     }
 
@@ -337,7 +359,16 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             hasRole(WHITELIST_SETTER_ROLE, _msgSender()),
             'Must have whitelist setter role'
         );
+        require(
+            ERC20(address(this)).balanceOf(account) == 0,
+            '0 token balance required to remove from whitelist'
+        );
+
+        emit RemoveFromWhitelist(account);
+
         return EnumerableSet.remove(whitelistAddresses, account);
+
+
     }
 
     /** 
@@ -432,8 +463,12 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             'Must have admin role'
         );
         require(
-            address(token) != tokenAddress || address(token) != address(this),
-            "can only withdraw other ERC20s"
+            address(token) != tokenAddress,
+            'can only withdraw other ERC20s'
+        );
+        require(
+            address(token) != address(this), 
+            'cannot withdraw vIDIA'
         );
         token.safeTransfer(to, token.balanceOf(address(this)));
     }
