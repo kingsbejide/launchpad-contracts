@@ -384,7 +384,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // so we do not check whitelist here
 
         // must be past end timestamp plus withdraw delay
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        require(
+            endTime + withdrawDelay < block.timestamp,
+            'cannot withdraw yet'
+        );
         // prevent repeat withdraw
         require(hasWithdrawn[_msgSender()] == false, 'already withdrawn');
         // must not be a zero price sale
@@ -415,7 +418,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         nonReentrant
     {
         // must be past end timestamp plus withdraw delay
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        require(
+            endTime + withdrawDelay < block.timestamp,
+            'cannot withdraw yet'
+        );
         // prevent repeat withdraw
         require(hasWithdrawn[_msgSender()] == false, 'already withdrawn');
         // must be a zero price sale
@@ -425,9 +431,15 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
             'proof invalid'
         );
-
-        // each participant in the zero cost "giveaway" gets a flat amount of sale token, as set by the override
-        uint256 saleTokenOwed = saleTokenAllocationOverride;
+        uint256 saleTokenOwed = 0;
+        // each participant in the zero cost "giveaway" gets a flat amount of sale token
+        if (saleTokenAllocationOverride == 0) {
+            // if there is no override, fetch the total payment allocation
+            saleTokenOwed = getTotalPaymentAllocation(_msgSender());
+        } else {
+            // if override, set the override amount
+            saleTokenOwed = saleTokenAllocationOverride;
+        }
 
         // set withdrawn to true
         hasWithdrawn[_msgSender()] = true;
@@ -445,7 +457,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     // Function for funder to cash in payment token and unsold sale token
     function cash() external onlyCasherOrOwner {
         // must be past end timestamp plus withdraw delay
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        require(
+            endTime + withdrawDelay < block.timestamp,
+            'cannot withdraw yet'
+        );
         // prevent repeat cash
         require(!hasCashed, 'already cashed');
 
