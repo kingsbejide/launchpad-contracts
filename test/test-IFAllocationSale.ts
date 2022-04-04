@@ -139,7 +139,7 @@ export default describe('IF Allocation Sale', function () {
       fundAmount
     ) // approve
     await IFAllocationSale.connect(seller).fund(fundAmount) // fund
-
+    //
     // stake and accrue stake weight
     mineNext()
     const stakeAmount = 100000000000000
@@ -190,7 +190,7 @@ export default describe('IF Allocation Sale', function () {
     mineNext()
 
     // gas used in purchase
-    expect((await getGasUsed()).toString()).to.equal('237952')
+    expect((await getGasUsed()).toString()).to.equal('237976')
 
     // fast forward from current time to after end time
     mineTimeDelta(endTime - (await getBlockTime()))
@@ -541,6 +541,91 @@ export default describe('IF Allocation Sale', function () {
     // expect balance to be 5000 for both participants
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('5000')
     expect(await SaleToken.balanceOf(buyer2.address)).to.equal('5000')
+  })
+
+  it('can perform a zero price giveaway sale unwhitelisted with staked amount', async function () {
+    mineNext()
+
+    // here set up a new IFAllocationSale with salePrice of 0, because
+    // provided fixture sale does not have salePrice set to 0
+
+    // deploy 0 price allocation sale
+    const IFAllocationSaleFactory = await ethers.getContractFactory(
+      'IFAllocationSale'
+    )
+    IFAllocationSale = await IFAllocationSaleFactory.deploy(
+      0, // sale price
+      seller.address,
+      PaymentToken.address, // doesn't matter
+      SaleToken.address,
+      IFAllocationMaster.address, // doesn't matter
+      trackId, // doesn't matter
+      snapshotBlock, // doesn't matter
+      startTime, // doesn't matter
+      endTime, // doesn't matter
+      maxTotalDeposit // doesn't matter
+    )
+    mineNext()
+
+    // fund sale
+    mineNext()
+    await SaleToken.connect(seller).approve(
+      IFAllocationSale.address,
+      fundAmount
+    ) // approve
+    await IFAllocationSale.connect(seller).fund(fundAmount) // fund
+
+    // set sale token allocation override (flat amount every participant receives)
+    // await IFAllocationSale.setSaleTokenAllocationOverride(5000)
+    mineNext()
+
+    // fast forward from current time to start time
+    mineTimeDelta(startTime - (await getBlockTime()))
+
+    // nothing to do here
+
+    // fast forward from current time to after end time
+    mineTimeDelta(endTime - (await getBlockTime()))
+
+    mineNext()
+    await PaymentToken.connect(buyer2).approve(
+      IFAllocationSale.address,
+      50000
+    )
+    await IFAllocationSale.connect(buyer2).purchase(50000)
+
+    // test normal withdraw (should not go through, must go through withdrawGiveaway)
+    mineNext()
+    await IFAllocationSale.connect(buyer).withdraw()
+    mineNext()
+    await IFAllocationSale.connect(buyer2).withdraw()
+    mineNext()
+
+    // expect balance to be 0 for both participants
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('0')
+    expect(await SaleToken.balanceOf(buyer2.address)).to.equal('0')
+
+    // test withdrawGiveaway (should go through)
+    mineNext()
+    await IFAllocationSale.connect(buyer).withdrawGiveaway([])
+    mineNext()
+    await IFAllocationSale.connect(buyer2).withdrawGiveaway([])
+
+    mineNext()
+    // console.log('master contract balance', await StakeToken.balanceOf(IFAllocationMaster.address))
+    // console.log('buyer balance', await SaleToken.balanceOf(buyer.address))
+    // console.log('buyer 2 balance', await SaleToken.balanceOf(buyer2.address))
+
+    // expect balance to be 500000000 for both participants
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('500000000')
+    expect(await SaleToken.balanceOf(buyer2.address)).to.equal('500000000')
+
+    // test purchaser counter (should be 0! nothing purchased in 0 price sales)
+    // note: this is the only scenario where this is different from withdrawer counter
+    expect(await IFAllocationSale.purchaserCount()).to.equal(0)
+
+    // test withdrawer counter
+    expect(await IFAllocationSale.withdrawerCount()).to.equal(2)
   })
 
   it('can set withdraw delay', async function () {
