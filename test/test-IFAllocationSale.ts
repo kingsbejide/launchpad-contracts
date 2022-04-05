@@ -146,9 +146,9 @@ export default describe('IF Allocation Sale', function () {
     // buyer 1
     await StakeToken.connect(buyer).approve(
       IFAllocationMaster.address,
-      stakeAmount
+      3 * stakeAmount
     ) // approve
-    await IFAllocationMaster.connect(buyer).stake(trackId, stakeAmount) // stake
+    await IFAllocationMaster.connect(buyer).stake(trackId, 3 * stakeAmount) // stake
     // buyer 2
     await StakeToken.connect(buyer2).approve(
       IFAllocationMaster.address,
@@ -160,7 +160,7 @@ export default describe('IF Allocation Sale', function () {
     mineNext()
     expect(
       (await StakeToken.balanceOf(IFAllocationMaster.address)).toString()
-    ).to.equal((stakeAmount * 2).toString())
+    ).to.equal((stakeAmount * 4).toString())
 
     //fastforward from current block to after snapshot block
     const blocksToMine =
@@ -575,8 +575,7 @@ export default describe('IF Allocation Sale', function () {
     ) // approve
     await IFAllocationSale.connect(seller).fund(fundAmount) // fund
 
-    // set sale token allocation override (flat amount every participant receives)
-    // await IFAllocationSale.setSaleTokenAllocationOverride(5000)
+    // no need to set override, because skaked drop
     mineNext()
 
     // fast forward from current time to start time
@@ -588,11 +587,6 @@ export default describe('IF Allocation Sale', function () {
     mineTimeDelta(endTime - (await getBlockTime()))
 
     mineNext()
-    await PaymentToken.connect(buyer2).approve(
-      IFAllocationSale.address,
-      50000
-    )
-    await IFAllocationSale.connect(buyer2).purchase(50000)
 
     // test normal withdraw (should not go through, must go through withdrawGiveaway)
     mineNext()
@@ -612,13 +606,16 @@ export default describe('IF Allocation Sale', function () {
     await IFAllocationSale.connect(buyer2).withdrawGiveaway([])
 
     mineNext()
-    // console.log('master contract balance', await StakeToken.balanceOf(IFAllocationMaster.address))
+    // console.log(
+    //   'master contract balance',
+    //   await StakeToken.balanceOf(IFAllocationMaster.address)
+    // )
     // console.log('buyer balance', await SaleToken.balanceOf(buyer.address))
     // console.log('buyer 2 balance', await SaleToken.balanceOf(buyer2.address))
 
-    // expect balance to be 500000000 for both participants
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('500000000')
-    expect(await SaleToken.balanceOf(buyer2.address)).to.equal('500000000')
+    // expect balance to be 1:4 ratio for both participants
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('750000000')
+    expect(await SaleToken.balanceOf(buyer2.address)).to.equal('250000000')
 
     // test purchaser counter (should be 0! nothing purchased in 0 price sales)
     // note: this is the only scenario where this is different from withdrawer counter

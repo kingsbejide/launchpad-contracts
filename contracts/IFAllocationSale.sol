@@ -8,7 +8,6 @@ import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './IFAllocationMaster.sol';
-import 'hardhat/console.sol';
 
 contract IFAllocationSale is Ownable, ReentrancyGuard {
     using SafeERC20 for ERC20;
@@ -413,7 +412,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         emit Withdraw(_msgSender(), saleTokenOwed);
     }
 
-    function getUserStakeWeight(address user) public view returns (uint256) {
+    function getUserStakeValue(address user) public view returns (uint256) {
         uint256 userWeight = allocationMaster.getUserStakeWeight(
             trackId,
             user,
@@ -426,8 +425,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // total weight must be greater than 0
         require(totalWeight > 0, 'total weight is 0');
 
-        // calculate allocation (times 10**18)
-        return (saleAmount * userWeight) / totalWeight;
+        // calculate max amount of obtainable sale token by user
+        return (saleAmount * userWeight) / (totalWeight);
     }
 
     // Function to withdraw (redeem) tokens from a zero cost "giveaway" sale
@@ -453,7 +452,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // each participant in the zero cost "giveaway" gets a flat amount of sale token
         if (saleTokenAllocationOverride == 0) {
             // if there is no override, fetch the total payment allocation
-            saleTokenOwed = getUserStakeWeight(_msgSender());
+            saleTokenOwed = getUserStakeValue(_msgSender());
         } else {
             // if override, set the override amount
             saleTokenOwed = saleTokenAllocationOverride;
