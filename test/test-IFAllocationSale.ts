@@ -604,16 +604,9 @@ export default describe('IF Allocation Sale', function () {
     await IFAllocationSale.connect(buyer).withdrawGiveaway([])
     mineNext()
     await IFAllocationSale.connect(buyer2).withdrawGiveaway([])
-
     mineNext()
-    // console.log(
-    //   'master contract balance',
-    //   await StakeToken.balanceOf(IFAllocationMaster.address)
-    // )
-    // console.log('buyer balance', await SaleToken.balanceOf(buyer.address))
-    // console.log('buyer 2 balance', await SaleToken.balanceOf(buyer2.address))
 
-    // expect balance to be 1:4 ratio for both participants
+    // expect balance to be 1:3 ratio for both participants
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('750000000')
     expect(await SaleToken.balanceOf(buyer2.address)).to.equal('250000000')
 

@@ -448,7 +448,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
             'proof invalid'
         );
-        uint256 saleTokenOwed = 0;
+        uint256 saleTokenOwed;
         // each participant in the zero cost "giveaway" gets a flat amount of sale token
         if (saleTokenAllocationOverride == 0) {
             // if there is no override, fetch the total payment allocation
