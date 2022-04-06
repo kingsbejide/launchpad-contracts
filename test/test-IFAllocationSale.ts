@@ -607,8 +607,12 @@ export default describe('IF Allocation Sale', function () {
     mineNext()
 
     // expect balance to be 1:3 ratio for both participants
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('750000000')
-    expect(await SaleToken.balanceOf(buyer2.address)).to.equal('250000000')
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal(
+      (Number(fundAmount) * 3) / 4
+    )
+    expect(await SaleToken.balanceOf(buyer2.address)).to.equal(
+      (Number(fundAmount) * 1) / 4
+    )
 
     // test purchaser counter (should be 0! nothing purchased in 0 price sales)
     // note: this is the only scenario where this is different from withdrawer counter
