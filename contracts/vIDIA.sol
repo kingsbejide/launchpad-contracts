@@ -208,7 +208,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
             userInfo[sender].lastRewardPerShare = rewardPerShare;
         }
         accumulatedFee += fee;
-
         userInfo[sender].unstakingAmt -= amount;
         if (userInfo[sender].unstakingAmt == 0) {
             userInfo[sender].unstakeAt = 0;

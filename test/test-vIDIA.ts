@@ -153,11 +153,6 @@ export default describe('vIDIA', async () => {
   })
 
   it('test stake tokens', async () => {
-    const transferAmt = 10000000
-    await underlying.transfer(vester.address, transferAmt)
-    await underlying
-      .connect(vester)
-      .approve(vIDIA.address, ethers.constants.MaxUint256)
     const stakeAmt = [100, 250]
 
     for (let i = 0; i < stakeAmt.length; i++) {
@@ -169,14 +164,8 @@ export default describe('vIDIA', async () => {
   })
 
   it('test stake/unstake', async () => {
-    const transferAmt = 10000000
-
-    await underlying.transfer(vester.address, transferAmt)
-    await underlying
-      .connect(vester)
-      .approve(vIDIA.address, ethers.constants.MaxUint256)
     const firstStakeAmt = 100
-    const secondStakeAmt = 250
+    const secondStakeAmt = 250 // TODO: format same as prev
     await vIDIA.connect(vester).stake(firstStakeAmt)
     let totalStaked = (await vIDIA.totalStakedAmt()).toNumber()
     expect(totalStaked).to.eq(firstStakeAmt)
@@ -207,7 +196,6 @@ export default describe('vIDIA', async () => {
   })
 
   it('test whitelist feature', async () => {
-    await underlying.approve(vIDIA.address, MaxUint256)
     await vIDIA.stake(WeiPerEth)
     await vIDIA.approve(vester.address, MaxUint256)
     await vIDIA.approve(vester2.address, MaxUint256)
@@ -270,7 +258,6 @@ export default describe('vIDIA', async () => {
   })
 
   it('test claimstaked', async () => {
-    await underlying.approve(vIDIA.address, MaxUint256)
     const ownerStakeAmt = convToBN(200)
     const rewarderStakeAmt = convToBN(1)
     await vIDIA.stake(ownerStakeAmt)
@@ -327,7 +314,6 @@ export default describe('vIDIA', async () => {
   })
 
   it('test claimpendingunstake with pending unstake', async () => {
-    await underlying.approve(vIDIA.address, MaxUint256)
     const ownerStakeAmt = convToBN(200)
     const rewarderStakeAmt = convToBN(1)
     await vIDIA.stake(ownerStakeAmt)
@@ -403,7 +389,6 @@ export default describe('vIDIA', async () => {
   })
 
   it('test cancelpendingunstake with pending unstake', async () => {
-    await underlying.approve(vIDIA.address, MaxUint256)
     const ownerStakeAmt = convToBN(200)
     const rewarderStakeAmt = convToBN(1)
     await vIDIA.stake(ownerStakeAmt)
