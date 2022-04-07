@@ -63,24 +63,24 @@ export default describe('vIDIA', async () => {
 
   it('test stake gas', async () => {
     const tx = await vIDIA.connect(vester).stake(WeiPerEth)
-    expect((await tx.wait()).gasUsed).to.eq(84478) // 84478
+    expect((await tx.wait()).gasUsed).to.eq(76280) // 84478
   })
 
   it('test stake/unstake', async () => {
     const tx = await vIDIA.connect(vester).unstake(WeiPerEth)
-    expect((await tx.wait()).gasUsed).to.eq(119305) // 119305
+    expect((await tx.wait()).gasUsed).to.eq(101579) // 119305
   })
 
   it('test claimstaked', async () => {
     const tx = await vIDIA.connect(vester).claimStaked(WeiPerEth)
-    expect((await tx.wait()).gasUsed).to.eq(148231) // 148231
+    expect((await tx.wait()).gasUsed).to.eq(139789) // 148231
   })
 
   it('test claimunstaked', async () => {
     await vIDIA.connect(vester).unstake(WeiPerEth)
     await mineTimeDelta((await vIDIA.unstakingDelay()).toNumber())
     const tx = await vIDIA.connect(vester).claimUnstaked()
-    expect((await tx.wait()).gasUsed).to.eq(48553) // 48553
+    expect((await tx.wait()).gasUsed).to.eq(47075) // 48553
   })
 
   it('test claimpendingunstake', async () => {
@@ -88,7 +88,7 @@ export default describe('vIDIA', async () => {
 
     await vIDIA.connect(vester).unstake(claimAmount)
     const tx = await vIDIA.connect(vester).claimPendingUnstake(claimAmount)
-    expect((await tx.wait()).gasUsed).to.eq(131595) // 131595
+    expect((await tx.wait()).gasUsed).to.eq(122247) // 131595
   })
 
   it('test cancelpendingunstake', async () => {
@@ -96,15 +96,16 @@ export default describe('vIDIA', async () => {
 
     await vIDIA.connect(vester).unstake(claimAmount)
     const tx = await vIDIA.connect(vester).cancelPendingUnstake(claimAmount)
-    expect((await tx.wait()).gasUsed).to.eq(139231) // 139231
+    expect((await tx.wait()).gasUsed).to.eq(121368) // 139231
   })
   
   it('test rewardclaim', async () => {
-    let tx = await vIDIA.connect(vester2).claimReward()
-    expect((await tx.wait()).gasUsed, "zero reward").to.eq(46162) // 46162
+    let tx = await vIDIA.connect(vester2).claimReward(vester2.address)
+    expect((await tx.wait()).gasUsed, "zero reward").to.eq(28563) // 46162
 
     await vIDIA.connect(vester).claimStaked(WeiPerEth)
-    tx = await vIDIA.connect(vester2).claimReward()
-    expect((await tx.wait()).gasUsed, "non zero reward").to.eq(71662) // 71662
+    tx = await vIDIA.connect(vester2).claimReward(vester2.address)
+    // +16 gas for the if (reward > 0) condition, but saves 15k gas when theres no reward
+    expect((await tx.wait()).gasUsed, "non zero reward").to.eq(69269) // 71662 
   })
 })

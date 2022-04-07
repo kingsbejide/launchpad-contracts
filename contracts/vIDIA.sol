@@ -98,12 +98,13 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     function stake(uint256 amount) external notHalted {
-        claimReward();
-        ERC20(underlying).safeTransferFrom(_msgSender(), address(this), amount);
+        address sender = _msgSender();
+        claimReward(sender);
+        ERC20(underlying).safeTransferFrom(sender, address(this), amount);
         totalStakedAmt += amount;
-        userInfo[_msgSender()].stakedAmt += amount;
-        _mint(_msgSender(), amount);
-        emit Stake(_msgSender(), amount);
+        userInfo[sender].stakedAmt += amount;
+        _mint(sender, amount);
+        emit Stake(sender, amount);
     }
 
     /** 
@@ -111,23 +112,24 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to unstake from staked tokens
      */
     function unstake(uint256 amount) external notHalted {
+        address sender = _msgSender();
         require(
-            userInfo[_msgSender()].unstakingAmt == 0,
+            userInfo[sender].unstakingAmt == 0,
             'User has pending tokens unstaking'
         );
         require(
-            userInfo[_msgSender()].unstakeAt == 0,
+            userInfo[sender].unstakeAt == 0,
             'User has tokens in unstaking queue'
         );
-        claimReward();
+        claimReward(sender);
         totalStakedAmt -= amount;
-        userInfo[_msgSender()].stakedAmt -= amount;
+        userInfo[sender].stakedAmt -= amount;
         //start unvesting period
-        userInfo[_msgSender()].unstakeAt = block.timestamp + unstakingDelay;
+        userInfo[sender].unstakeAt = block.timestamp + unstakingDelay;
 
-        userInfo[_msgSender()].unstakingAmt = amount;
-        burn(userInfo[_msgSender()].unstakingAmt);
-        emit Unstake(_msgSender(), amount);
+        userInfo[sender].unstakingAmt = amount;
+        burn(userInfo[sender].unstakingAmt);
+        emit Unstake(sender, amount);
     }
 
     /** 
@@ -136,19 +138,20 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @notice For tokens in the unstaking queue, use instantUnstakePending()
      */
     function claimUnstaked() external notHalted {
+        address sender = _msgSender();
         //require curr time more than unstaking delay
         require(
-            userInfo[_msgSender()].unstakingAmt != 0 &&
-                block.timestamp > userInfo[_msgSender()].unstakeAt,
+            userInfo[sender].unstakingAmt != 0 &&
+                block.timestamp > userInfo[sender].unstakeAt,
             'Tokens have not finished vesting'
         );
 
-        uint256 withdrawAmt = userInfo[_msgSender()].unstakingAmt;
-        userInfo[_msgSender()].unstakingAmt = 0;
-        userInfo[_msgSender()].unstakeAt = 0;
-        ERC20(underlying).safeTransfer(_msgSender(), withdrawAmt);
+        uint256 withdrawAmt = userInfo[sender].unstakingAmt;
+        userInfo[sender].unstakingAmt = 0;
+        userInfo[sender].unstakeAt = 0;
+        ERC20(underlying).safeTransfer(sender, withdrawAmt);
 
-        emit ClaimUnstaked(_msgSender(), withdrawAmt);
+        emit ClaimUnstaked(sender, withdrawAmt);
     }
 
     /** 
@@ -158,25 +161,26 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from staked tokens
      */
     function claimStaked(uint256 amount) external notHalted {
-        claimReward();
+        address sender = _msgSender();
+        claimReward(sender);
 
         uint256 fee = (amount * skipDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmt = amount - fee;
-        uint256 divisor = totalStakedAmt - userInfo[_msgSender()].stakedAmt;
+        uint256 divisor = totalStakedAmt - userInfo[sender].stakedAmt;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
             rewardPerShare += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
+            userInfo[sender].lastRewardPerShare = rewardPerShare;
         }
 
         totalStakedAmt -= amount;
-        userInfo[_msgSender()].stakedAmt -= amount;
+        userInfo[sender].stakedAmt -= amount;
         accumulatedFee += fee;
 
         burn(amount);
-        ERC20(underlying).safeTransfer(_msgSender(), withdrawAmt);
-        emit ClaimStaked(_msgSender(), fee, withdrawAmt);
+        ERC20(underlying).safeTransfer(sender, withdrawAmt);
+        emit ClaimStaked(sender, fee, withdrawAmt);
     }
 
     /** 
@@ -186,30 +190,31 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to instantly withdraw from unstake queue
      */
     function claimPendingUnstake(uint256 amount) external notHalted {
+        address sender = _msgSender();
         require(
-            userInfo[_msgSender()].unstakingAmt != 0 &&
-                userInfo[_msgSender()].unstakeAt > block.timestamp,
+            userInfo[sender].unstakingAmt != 0 &&
+                userInfo[sender].unstakeAt > block.timestamp,
             'Can unstake without paying fee'
         );
-        claimReward();
+        claimReward(sender);
 
         uint256 fee = (amount * skipDelayFee) / ONE_HUNDRED;
         uint256 withdrawAmt = amount - fee;
-        uint256 divisor = totalStakedAmt - userInfo[_msgSender()].stakedAmt;
+        uint256 divisor = totalStakedAmt - userInfo[sender].stakedAmt;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
             rewardPerShare += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
+            userInfo[sender].lastRewardPerShare = rewardPerShare;
         }
         accumulatedFee += fee;
 
-        userInfo[_msgSender()].unstakingAmt -= amount;
-        if (userInfo[_msgSender()].unstakingAmt == 0) {
-            userInfo[_msgSender()].unstakeAt = 0;
+        userInfo[sender].unstakingAmt -= amount;
+        if (userInfo[sender].unstakingAmt == 0) {
+            userInfo[sender].unstakeAt = 0;
         }
-        ERC20(underlying).safeTransfer(_msgSender(), withdrawAmt);
-        emit ClaimPendingUnstake(_msgSender(), fee, withdrawAmt);
+        ERC20(underlying).safeTransfer(sender, withdrawAmt);
+        emit ClaimPendingUnstake(sender, fee, withdrawAmt);
     }
 
     /** 
@@ -219,43 +224,46 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
      @param amount the amount of tokens to cancel unstaking process for
      */
     function cancelPendingUnstake(uint256 amount) external notHalted {
+        address sender = _msgSender();
         require(
-            userInfo[_msgSender()].unstakeAt > block.timestamp,
+            userInfo[sender].unstakeAt > block.timestamp,
             'Can restake without paying fee'
         );
-        claimReward();
+        claimReward(sender);
 
         uint256 fee = (amount * cancelUnstakeFee) / ONE_HUNDRED;
         uint256 stakeAmount = amount - fee;
-        uint256 divisor = totalStakedAmt - userInfo[_msgSender()].stakedAmt;
+        uint256 divisor = totalStakedAmt - userInfo[sender].stakedAmt;
 
         if (divisor != 0) {
             // mul by FACTOR of 10**30 to reduce truncation
             rewardPerShare += (fee * FACTOR) / divisor;
-            userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
+            userInfo[sender].lastRewardPerShare = rewardPerShare;
         }
         accumulatedFee += fee;
 
-        userInfo[_msgSender()].unstakingAmt -= amount;
-        if (userInfo[_msgSender()].unstakingAmt == 0) {
-            userInfo[_msgSender()].unstakeAt = 0;
+        userInfo[sender].unstakingAmt -= amount;
+        if (userInfo[sender].unstakingAmt == 0) {
+            userInfo[sender].unstakeAt = 0;
         }
 
-        userInfo[_msgSender()].stakedAmt += stakeAmount;
+        userInfo[sender].stakedAmt += stakeAmount;
         totalStakedAmt += stakeAmount;
-        _mint(_msgSender(), stakeAmount);
-        emit CancelPendingUnstake(_msgSender(), fee, stakeAmount);
+        _mint(sender, stakeAmount);
+        emit CancelPendingUnstake(sender, fee, stakeAmount);
     }
 
     // claim reward and reset user's reward sum
-    function claimReward() public {
-        uint256 reward = calculateUserReward(_msgSender());
-        // reset user's rewards sum
-        userInfo[_msgSender()].lastRewardPerShare = rewardPerShare;
-        // transfer reward to user
-        ERC20 claimedTokens = ERC20(underlying);
-        claimedTokens.safeTransfer(_msgSender(), reward);
-        emit ClaimReward(_msgSender(), reward);
+    function claimReward(address sender) public {
+        uint256 reward = calculateUserReward(sender);
+        if (reward > 0) {
+            // reset user's rewards sum
+            userInfo[sender].lastRewardPerShare = rewardPerShare;
+            // transfer reward to user
+            ERC20 claimedTokens = ERC20(underlying);
+            claimedTokens.safeTransfer(sender, reward);
+            emit ClaimReward(sender, reward);  
+        }
     }
 
     /** 

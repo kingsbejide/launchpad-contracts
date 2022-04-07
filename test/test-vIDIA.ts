@@ -38,9 +38,6 @@ const checkWithinTolerance = (
 }
 
 export default describe('vIDIA', async () => {
-  // unset timeout from the test
-  this.timeout(0)
-
   let vIDIA: Contract
   let underlying: Contract
   let owner: SignerWithAddress
@@ -303,10 +300,6 @@ export default describe('vIDIA', async () => {
         .div(FACTOR)
 
       expect(await vIDIA.claimStaked(withdrawAmt[i]))
-        .to.emit(vIDIA, 'ClaimReward')
-        .withArgs(owner.address, _0)
-        .to.emit(underlying, 'Transfer')
-        .withArgs(vIDIA.address, owner.address, _0)
         .to.emit(vIDIA, 'ClaimStaked')
         .withArgs(owner.address, fee, receiveAmt)
         .to.emit(underlying, 'Transfer')
@@ -374,10 +367,6 @@ export default describe('vIDIA', async () => {
         .div(FACTOR)
 
       expect(await vIDIA.claimPendingUnstake(withdrawAmt[i]))
-        .to.emit(vIDIA, 'ClaimReward')
-        .withArgs(owner.address, _0)
-        .to.emit(underlying, 'Transfer')
-        .withArgs(vIDIA.address, owner.address, _0)
         .to.emit(vIDIA, 'ClaimPendingUnstake')
         .withArgs(owner.address, fee, receiveAmt)
         .to.emit(underlying, 'Transfer')
@@ -456,10 +445,6 @@ export default describe('vIDIA', async () => {
         .div(FACTOR)
 
       expect(await vIDIA.cancelPendingUnstake(withdrawAmt[i]))
-        .to.emit(vIDIA, 'ClaimReward')
-        .withArgs(owner.address, _0)
-        .to.emit(underlying, 'Transfer')
-        .withArgs(vIDIA.address, owner.address, _0)
         .to.emit(vIDIA, 'CancelPendingUnstake')
         .withArgs(owner.address, fee, receiveAmt)
 
