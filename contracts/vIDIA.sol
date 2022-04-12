@@ -35,11 +35,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     }
 
     bytes32 public constant FEE_SETTER_ROLE = keccak256('FEE_SETTER_ROLE');
-
     bytes32 public constant DELAY_SETTER_ROLE = keccak256('DELAY_SETTER_ROLE');
-
     bytes32 public constant WHITELIST_SETTER_ROLE =
         keccak256('WHITELIST_SETTER_ROLE');
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     EnumerableSet.AddressSet private whitelistAddresses;
 
@@ -94,6 +93,7 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(FEE_SETTER_ROLE, _admin);
         _setupRole(DELAY_SETTER_ROLE, _admin);
         _setupRole(WHITELIST_SETTER_ROLE, _admin);
+        _setupRole(MINTER_ROLE, admin);
         underlying = _underlying;
     }
 
