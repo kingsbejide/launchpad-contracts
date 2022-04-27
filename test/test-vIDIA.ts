@@ -15,6 +15,7 @@ const _2 = ethers.constants.Two
 const _10 = BigNumber.from(10)
 const _10000 = BigNumber.from(10000)
 const FACTOR = BigNumber.from(_10.pow(BigNumber.from(30)))
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 const TWO_WEEKS = 14 * 86400
 
@@ -146,8 +147,8 @@ export default describe('vIDIA', async () => {
 
       if (i !== 2)
         // fee setters should throw when setting >100%
-        await expect(fns[i].set(10001)).to.be.revertedWith(
-          'Fee must be less than 100%'
+        await expect(fns[i].set(5001)).to.be.revertedWith(
+          'Fee must be less than 50%'
         )
     }
   })
@@ -228,31 +229,31 @@ export default describe('vIDIA', async () => {
     }
 
     // case 1: no whitelist, should fail transfer
-    await checkWhitelist([])
+    await checkWhitelist([ZERO_ADDRESS])
     await checkFailure(vester)
     await checkFailure(vester2)
 
     // case 2: source addr in whitelist, should not fail xfer
     await vIDIA.addToWhitelist(vester.address)
-    await checkWhitelist([vester.address])
+    await checkWhitelist([ZERO_ADDRESS, vester.address])
     await checkSuccess(vester)
     await checkFailure(vester2)
 
     // case 3: source addr and dest addr in whitelist, should not fail xfer
     await vIDIA.addToWhitelist(vester2.address)
-    await checkWhitelist([vester.address, vester2.address])
+    await checkWhitelist([ZERO_ADDRESS, vester.address, vester2.address])
     await checkSuccess(vester)
     await checkSuccess(vester2)
 
     // case 4: dest addr in whitelist, should not fail xfer
     await vIDIA.removeFromWhitelist(vester.address)
-    await checkWhitelist([vester2.address])
+    await checkWhitelist([ZERO_ADDRESS, vester2.address])
     await checkFailure(vester)
     await checkSuccess(vester2)
 
     // case 5: remove all addr from whitelist, should fail xfer
     await vIDIA.removeFromWhitelist(vester2.address)
-    await checkWhitelist([])
+    await checkWhitelist([ZERO_ADDRESS])
     await checkFailure(vester)
     await checkFailure(vester2)
   })

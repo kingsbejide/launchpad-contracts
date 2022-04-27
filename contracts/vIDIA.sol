@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import 'hardhat/console.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/access/AccessControlEnumerable.sol';
 import '../library/IFTokenStandard.sol';
@@ -12,7 +11,8 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     using SafeERC20 for ERC20;
 
     uint256 private constant FACTOR = 10**30;
-    uint256 private constant ONE_HUNDRED = 10000; // one hundred in basis points
+    uint256 private constant FIFTY = 5000; // 50 in basis points
+    uint256 private constant ONE_HUNDRED = 10000; // 50 in basis points
     uint256 private constant ONE_MONTH = 86400 * 30;
 
     // delay for unstaking token
@@ -95,6 +95,10 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(DELAY_SETTER_ROLE, _admin);
         _setupRole(WHITELIST_SETTER_ROLE, _admin);
         underlying = _underlying;
+
+        // Add 0x0 to whitelist so _beforeTokenTransfer doesn't reject mint/burn txs
+        // transfers to/from 0x0 fail by default
+        EnumerableSet.add(whitelistAddresses, address(0x0)); 
     }
 
     function stake(uint256 amount) external notHalted {
@@ -267,14 +271,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     /** 
      @notice Update fee levied for instantly unstaking. Fee is in basis points
-     @dev Requires fee setter role and fee must be below 10000 basis pts
+     @dev Requires fee setter role and fee must be below 5000 basis pts
      @param newFee the new fee
      */
     function updateSkipDelayFee(uint256 newFee)
         external
         onlyRole(FEE_SETTER_ROLE)
     {
-        require(newFee <= ONE_HUNDRED, 'Fee must be less than 100%');
+        require(newFee <= FIFTY, 'Fee must be less than 50%');
         skipDelayFee = newFee;
 
         emit UpdateSkipDelayFee(newFee);
@@ -282,14 +286,14 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
 
     /** 
      @notice Update fee levied for cancelling unstaking. Fee is in basis points
-     @dev Requires fee setter role and fee must be below 10000 basis pts
+     @dev Requires fee setter role and fee must be below 5000 basis pts
      @param newFee the new fee
      */
     function updateCancelUnstakeFee(uint256 newFee)
         external
         onlyRole(FEE_SETTER_ROLE)
     {
-        require(newFee <= ONE_HUNDRED, 'Fee must be less than 100%');
+        require(newFee <= FIFTY, 'Fee must be less than 50%');
         cancelUnstakeFee = newFee;
 
         emit UpdateCancelUnstakeFee(newFee);
@@ -366,45 +370,18 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         return EnumerableSet.values(whitelistAddresses);
     }
 
-    /** 
-     @notice Standard ERC20 transfer but only to/fro whitelisted addresses
-     @dev purpose is to enable transfers to and fro launchpad contract only
-     @param to address to send tokens to
-     @param amount transfer amount
-     @return boolean representing if transfer was successful
+    /**
+     @notice Overriding _beforeTokenTransfer in ERC20
+     @dev metatx caller will never be whitelisted, no need to worry about _msgSender() 
+     @param from the address tokens are taken from
+     @param to the address to send tokens to
      */
-    function transfer(address to, uint256 amount)
-        public
-        override
-        returns (bool)
-    {
-        require(
-            EnumerableSet.contains(whitelistAddresses, to) ||
-                EnumerableSet.contains(whitelistAddresses, _msgSender()),
-            'Origin and dest address not in whitelist'
-        );
-        return ERC20.transfer(to, amount);
-    }
-
-    /** 
-     @notice Standard ERC20 transferFrom but only to/fro whitelisted addresses
-     @dev purpose is to enable transfers to and fro launchpad contract only
-     @param from address the tokens are sent from 
-     @param to address to send tokens to
-     @param amount transfer amount
-     @return boolean representing if transfer was successful
-     */
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
+    function _beforeTokenTransfer(address from, address to, uint256) internal view override {
         require(
             EnumerableSet.contains(whitelistAddresses, from) ||
                 EnumerableSet.contains(whitelistAddresses, to),
             'Origin and dest address not in whitelist'
         );
-        return ERC20.transferFrom(from, to, amount);
     }
 
     /** 
