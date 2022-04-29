@@ -409,7 +409,7 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
     }
 
     // get closest PRECEDING track checkpoint
-    function getClosestTrackCheckpoint(uint24 trackId, uint256 timestamp)
+    function getClosestTrackCheckpoint(uint24 trackId, uint80 timestamp)
         private
         view
         returns (TrackCheckpoint memory cp)
