@@ -31,7 +31,6 @@ contract IFAllocationMaster is
     // STRUCTS
 
     // Celer Multichain Integration
-    uint64 nonce;
     address messageBus;
 
     // A checkpoint for marking stake info at a given block
@@ -863,10 +862,7 @@ contract IFAllocationMaster is
         uint64 dstChainId
     ) external {
         // should be active track
-        require(trackDisabled[trackId], 'track !disabled');
-
-        // each transfer is assigned a nonce
-        nonce += 1;
+        require(!trackDisabled[trackId], 'track !disabled');
 
         // get user stake weight on this contract
         uint192 userStakeWeight = getUserStakeWeight(trackId, user, timestamp);
@@ -906,12 +902,9 @@ contract IFAllocationMaster is
         uint24 trackId,
         uint80 timestamp,
         uint64 dstChainId
-    ) external onlyOwner {
+    ) external {
         // should be active track
-        require(trackDisabled[trackId], 'track !disabled');
-
-        // each transfer is assigned a nonce
-        nonce += 1;
+        require(!trackDisabled[trackId], 'track disabled');
 
         // get total stake weight on this contract
         uint192 totalStakeWeight = getTotalStakeWeight(trackId, timestamp);
