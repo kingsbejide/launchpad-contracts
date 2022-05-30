@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 // import "hardhat/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
@@ -104,7 +104,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         address _funder,
         ERC20 _paymentToken,
         ERC20 _saleToken,
-        IFAllocationMaster _allocationMaster,
+        IIFRetrievableStakeWeight _allocationMaster,
         uint24 _trackId,
         uint80 _allocSnapshotTimestamp,
         uint256 _startTime,

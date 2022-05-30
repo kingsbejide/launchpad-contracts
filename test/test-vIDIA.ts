@@ -3,7 +3,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Contract } from '@ethersproject/contracts'
-import { mineNext, getBlockTime, mineTimeDelta } from './helpers'
+import { mineNext, getBlockTime, mineTimeDelta, setAutomine } from './helpers'
 import { first } from 'lodash'
 import { BigNumber } from 'ethers'
 
@@ -15,7 +15,7 @@ const _2 = ethers.constants.Two
 const _10 = BigNumber.from(10)
 const _10000 = BigNumber.from(10000)
 const FACTOR = BigNumber.from(_10.pow(BigNumber.from(30)))
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 const TWO_WEEKS = 14 * 86400
 
@@ -48,7 +48,7 @@ export default describe('vIDIA', async () => {
   beforeEach(async () => {
     // Get the ContractFactory and Signers here.
     // Token = await ethers.getContractFactory("Token");
-    [owner, vester, vester2] = await ethers.getSigners()
+    ;[owner, vester, vester2] = await ethers.getSigners()
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been

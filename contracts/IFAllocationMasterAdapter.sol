@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
+import 'sgn-v2-contracts/contracts/message/interfaces/IMessageReceiverApp.sol';
 import './interfaces/IIFRetrievableStakeWeight.sol';
 import './interfaces/IIFBridgableStakeWeight.sol';
 
@@ -30,13 +31,13 @@ contract IFAllocationMasterAdapter is
 
     // CONSTRUCTOR
     constructor(
-        _messageBus,
-        _srcAddress,
-        _srcChainId
+        address _messageBus,
+        address _srcAddress,
+        uint24 _srcChainId
     ) {
         messageBus = _messageBus;
-        srcAddress = srcAddress;
-        srcChainId = srcChainId;
+        srcAddress = _srcAddress;
+        srcChainId = _srcChainId;
     }
 
     function getTotalStakeWeight(uint24 trackId, uint80 timestamp)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 interface IIFRetrievableStakeWeight {
     function getTotalStakeWeight(uint24 trackId, uint80 timestamp)
@@ -11,5 +11,5 @@ interface IIFRetrievableStakeWeight {
         uint24 trackId,
         address user,
         uint80 timestamp
-    ) public view returns (uint192)
+    ) external view returns (uint192);
 }

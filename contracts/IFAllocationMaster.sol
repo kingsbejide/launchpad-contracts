@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.9;
 
 // import 'hardhat/console.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
@@ -31,7 +31,7 @@ contract IFAllocationMaster is
     // STRUCTS
 
     // Celer Multichain Integration
-    address messageBus;
+    address public immutable messageBus;
 
     // A checkpoint for marking stake info at a given block
     struct UserCheckpoint {
@@ -160,7 +160,7 @@ contract IFAllocationMaster is
     );
 
     // CONSTRUCTOR
-    constructor(_messageBus) {
+    constructor(address _messageBus) {
         messageBus = _messageBus;
     }
 
@@ -490,7 +490,7 @@ contract IFAllocationMaster is
     // gets total stake weight within a track at a particular timestamp number
     // logic extended from Compound COMP token `getPriorVotes` function
     function getTotalStakeWeight(uint24 trackId, uint80 timestamp)
-        external
+        public
         view
         returns (uint192)
     {
@@ -860,7 +860,7 @@ contract IFAllocationMaster is
         uint24 trackId,
         uint80 timestamp,
         uint64 dstChainId
-    ) external {
+    ) external payable {
         // should be active track
         require(!trackDisabled[trackId], 'track !disabled');
 
@@ -870,7 +870,7 @@ contract IFAllocationMaster is
         // construct message data to be sent to dest contract
         bytes memory message = abi.encode(
             MessageRequest({
-                bridgeType: BridgeType.UserStake,
+                bridgeType: BridgeType.UserWeight,
                 user: user,
                 timestamp: timestamp,
                 weight: userStakeWeight,
@@ -902,7 +902,7 @@ contract IFAllocationMaster is
         uint24 trackId,
         uint80 timestamp,
         uint64 dstChainId
-    ) external {
+    ) external payable {
         // should be active track
         require(!trackDisabled[trackId], 'track disabled');
 
@@ -929,6 +929,6 @@ contract IFAllocationMaster is
             msg.value
         );
 
-        emit SyncUserWeight(receiver, trackId, timestamp, dstChainId, trackId);
+        emit SyncTotalWeight(receiver, trackId, timestamp, dstChainId, trackId);
     }
 }
