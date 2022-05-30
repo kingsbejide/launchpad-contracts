@@ -6,12 +6,21 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import 'sgn-v2-contracts/contracts/message/libraries/MessageSenderLib.sol';
+
+import './interfaces/IIFRetrievableStakeWeight.sol';
+import './interfaces/IIFBridgableStakeWeight.sol';
 
 // IFAllocationMaster is responsible for persisting all launchpad state between project token sales
 // in order for the sales to have clean, self-enclosed, one-time-use states.
 
 // IFAllocationMaster is the master of allocations. He can remember everything and he is a smart guy.
-contract IFAllocationMaster is Ownable, ReentrancyGuard {
+contract IFAllocationMaster is
+    Ownable,
+    ReentrancyGuard,
+    IIFRetrievableStakeWeight,
+    IIFBridgableStakeWeight
+{
     using SafeERC20 for ERC20;
 
     // CONSTANTS
@@ -20,6 +29,10 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
     uint64 constant ROLLOVER_FACTOR_DECIMALS = 10**18;
 
     // STRUCTS
+
+    // Celer Multichain Integration
+    uint64 nonce;
+    address messageBus;
 
     // A checkpoint for marking stake info at a given block
     struct UserCheckpoint {
@@ -131,10 +144,26 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
         address indexed sender,
         uint256 amount
     );
+    event SyncUserWeight(
+        address receiver,
+        address user,
+        uint24 srcTrackId,
+        uint80 timestamp,
+        uint64 dstChainId,
+        uint24 dstTrackId
+    );
+    event SyncTotalWeight(
+        address receiver,
+        uint24 srcTrackId,
+        uint80 timestamp,
+        uint64 dstChainId,
+        uint24 dstTrackId
+    );
 
     // CONSTRUCTOR
-
-    constructor() {}
+    constructor(_messageBus) {
+        messageBus = _messageBus;
+    }
 
     // FUNCTIONS
 
@@ -183,7 +212,8 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
         // get number of finished sales of this track
         uint24 nFinishedSales = trackCheckpoints[trackId][
             trackCheckpointCounts[trackId] - 1
-        ].numFinishedSales;
+        ]
+        .numFinishedSales;
 
         // update map that tracks timestamp numbers of finished sales
         trackFinishedSaleTimestamps[trackId][nFinishedSales] = uint80(
@@ -225,7 +255,7 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
 
         // update user rollover amount
         trackActiveRollOvers[trackId][_msgSender()][saleCount] = userCp
-            .stakeWeight;
+        .stakeWeight;
 
         // add new user rollover amount to total
         trackTotalActiveRollOvers[trackId][saleCount] += userCp.stakeWeight;
@@ -820,5 +850,92 @@ contract IFAllocationMaster is Ownable, ReentrancyGuard {
 
         // emit
         emit EmergencyWithdraw(trackId, _msgSender(), checkpoint.staked);
+    }
+
+    // Methods for bridging track weight information
+
+    // Push
+    function syncUserWeight(
+        address receiver,
+        address user,
+        uint24 trackId,
+        uint80 timestamp,
+        uint64 dstChainId
+    ) external {
+        // should be active track
+        require(trackDisabled[trackId], 'track !disabled');
+
+        // each transfer is assigned a nonce
+        nonce += 1;
+
+        // get user stake weight on this contract
+        uint192 userStakeWeight = getUserStakeWeight(trackId, user, timestamp);
+
+        // construct message data to be sent to dest contract
+        bytes memory message = abi.encode(
+            MessageRequest({
+                bridgeType: BridgeType.UserStake,
+                user: user,
+                timestamp: timestamp,
+                weight: userStakeWeight,
+                trackId: trackId
+            })
+        );
+
+        // trigger the message bridge
+        MessageSenderLib.sendMessage(
+            receiver,
+            dstChainId,
+            message,
+            messageBus,
+            msg.value
+        );
+
+        emit SyncUserWeight(
+            receiver,
+            user,
+            trackId,
+            timestamp,
+            dstChainId,
+            trackId
+        );
+    }
+
+    function syncTotalWeight(
+        address receiver,
+        uint24 trackId,
+        uint80 timestamp,
+        uint64 dstChainId
+    ) external onlyOwner {
+        // should be active track
+        require(trackDisabled[trackId], 'track !disabled');
+
+        // each transfer is assigned a nonce
+        nonce += 1;
+
+        // get total stake weight on this contract
+        uint192 totalStakeWeight = getTotalStakeWeight(trackId, timestamp);
+
+        // construct message data to be sent to dest contract
+        bytes memory message = abi.encode(
+            MessageRequest({
+                bridgeType: BridgeType.TotalWeight,
+                user: _msgSender(),
+                timestamp: timestamp,
+                weight: totalStakeWeight,
+                trackId: trackId
+            })
+        );
+
+        // trigger the message bridge
+        MessageSenderLib.sendMessage(
+            receiver,
+            dstChainId,
+            message,
+            messageBus,
+            msg.value
+        );
+
+        emit SyncUserWeight(receiver, trackId, timestamp, dstChainId, trackId);
     }
 }
