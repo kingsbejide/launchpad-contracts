@@ -94,7 +94,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         _setupRole(FEE_SETTER_ROLE, _admin);
         _setupRole(DELAY_SETTER_ROLE, _admin);
         _setupRole(WHITELIST_SETTER_ROLE, _admin);
-        rewardPerShare = 1;
         underlying = _underlying;
 
         // Add 0x0 to whitelist so _beforeTokenTransfer doesn't reject mint/burn txs
@@ -108,10 +107,6 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
         ERC20(underlying).safeTransferFrom(sender, address(this), amount);
         totalStakedAmt += amount;
         userInfo[sender].stakedAmt += amount;
-        // If lastRewardPerShare < rewardPerShare, it means that's the first time the user stakes. We set it to rewardPerShare
-        if (userInfo[sender].lastRewardPerShare < rewardPerShare) {
-            userInfo[sender].lastRewardPerShare = rewardPerShare;
-        }
         _mint(sender, amount);
         emit Stake(sender, amount);
     }
@@ -264,9 +259,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     // claim reward and reset user's reward sum
     function claimReward(address sender) public {
         uint256 reward = calculateUserReward(sender);
+        // reset user's rewards sum
+        userInfo[sender].lastRewardPerShare = rewardPerShare;
         if (reward > 0) {
-            // reset user's rewards sum
-            userInfo[sender].lastRewardPerShare = rewardPerShare;
             // transfer reward to user
             ERC20 claimedTokens = ERC20(underlying);
             claimedTokens.safeTransfer(sender, reward);

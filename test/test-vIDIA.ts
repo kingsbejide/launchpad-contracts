@@ -481,8 +481,6 @@ export default describe('vIDIA', async () => {
     await vIDIA.connect(vester2).stake(stakeAmtB)
     await vIDIA.claimStaked(ownerStakeAmt.div(2))
 
-    console.log('vester A reward', await vIDIA.calculateUserReward(vester.address))
-    console.log('vester B reward', await vIDIA.calculateUserReward(vester2.address))
     // all reward goes to vester
     const rewardFirst = ownerStakeAmt.div(2).mul(20).div(100)
     // reward is shared by both vester and vester2
