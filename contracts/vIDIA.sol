@@ -260,7 +260,9 @@ contract vIDIA is AccessControlEnumerable, IFTokenStandard {
     function claimReward(address sender) public {
         uint256 reward = calculateUserReward(sender);
         // reset user's rewards sum
-        userInfo[sender].lastRewardPerShare = rewardPerShare;
+        if (userInfo[sender].lastRewardPerShare != rewardPerShare) {
+            userInfo[sender].lastRewardPerShare = rewardPerShare;
+        }
         if (reward > 0) {
             // transfer reward to user
             ERC20 claimedTokens = ERC20(underlying);
