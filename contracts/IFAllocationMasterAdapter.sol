@@ -10,11 +10,11 @@ contract IFAllocationMasterAdapter is
     IIFBridgableStakeWeight
 {
     // Celer Multichain Integration
-    address messageBus;
+    address public immutable messageBus;
 
     // Whitelisted Caller
-    address srcAddress;
-    uint24 srcChainId;
+    address public immutable srcAddress;
+    uint24 public immutable srcChainId;
 
     // user checkpoint mapping -- (track, user address, timestamp) => UserStakeWeight
     mapping(uint24 => mapping(address => mapping(uint80 => uint192)))

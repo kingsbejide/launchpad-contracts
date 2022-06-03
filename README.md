@@ -21,9 +21,12 @@ npx hardhat test
 
 ### Deploy commands
 
+MESSAGE_BUS is address of celer's message bus, this is required for cross chain data transfer
+To get list of the address, follow this url https://im-docs.celer.network/developer/contract-addresses-and-rpc-info
+
 ```
 # allocation master
-npx hardhat run ./scripts/IFAllocationMaster-deploy.ts --network bsc_test
+MESSAGE_BUS=0xABC npx hardhat run ./scripts/IFAllocationMaster-deploy.ts --network bsc_test
 
 # allocation sale
 SELLER=0xABCD PAY_TOKEN=0xABCD SALE_TOKEN=0xABCD ALLOCATION_MASTER=0xABCD TRACK_ID=123 SNAP_BLOCK=123456 START_BLOCK=123456 END_BLOCK=123456 SALE_PRICE=100000000000000000000 MAX_TOTAL_PAYMENT=10000000000000000000000 npx hardhat run ./scripts/IFAllocationSale-deploy.ts --network bsc_test
