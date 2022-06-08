@@ -28,6 +28,9 @@ To get list of the address, follow this url https://im-docs.celer.network/develo
 # allocation master
 MESSAGE_BUS=0xABC npx hardhat run ./scripts/IFAllocationMaster-deploy.ts --network bsc_test
 
+# allocation master adapter
+MESSAGE_BUS=0xABC SOURCE_ADDRESS=0xABC SOURCE_CHAIN={{chainId}} npx hardhat run ./scripts/IFAllocationMasterAdapter-deploy.ts --network bsc_test
+
 # allocation sale
 SELLER=0xABCD PAY_TOKEN=0xABCD SALE_TOKEN=0xABCD ALLOCATION_MASTER=0xABCD TRACK_ID=123 SNAP_BLOCK=123456 START_BLOCK=123456 END_BLOCK=123456 SALE_PRICE=100000000000000000000 MAX_TOTAL_PAYMENT=10000000000000000000000 npx hardhat run ./scripts/IFAllocationSale-deploy.ts --network bsc_test
 ```
