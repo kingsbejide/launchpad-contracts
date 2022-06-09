@@ -85,12 +85,14 @@ contract IFAllocationMasterAdapter is
         );
 
         if (message.bridgeType == BridgeType.UserWeight) {
-            userStakeWeights[message.trackId][message.user][
-                message.timestamp
-            ] = message.weight;
+            for (uint256 i = 0; i < message.users.length; i++) {
+                userStakeWeights[message.trackId][message.users[i]][
+                    message.timestamp
+                ] = message.weights[i];
+            }
         } else {
             totalStakeWeight[message.trackId][message.timestamp] = message
-            .weight;
+                .weights[0];
         }
 
         return IMessageReceiverApp.ExecutionStatus.Success;

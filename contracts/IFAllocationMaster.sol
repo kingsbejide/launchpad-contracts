@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import 'sgn-v2-contracts/contracts/message/libraries/MessageSenderLib.sol';
 
 import './interfaces/IIFRetrievableStakeWeight.sol';
@@ -22,6 +23,7 @@ contract IFAllocationMaster is
     IIFBridgableStakeWeight
 {
     using SafeERC20 for ERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     // CONSTANTS
 
@@ -112,6 +114,9 @@ contract IFAllocationMaster is
     // the number of checkpoints of a track -- (track) => checkpoint count
     mapping(uint24 => uint32) public trackCheckpointCounts;
 
+    // the set of participated addresses of a track -- (track) => participated addresses
+    mapping(uint24 => EnumerableSet.AddressSet) private whitelistAddresses;
+
     // track checkpoint mapping -- (track, checkpoint number) => TrackCheckpoint
     mapping(uint24 => mapping(uint32 => TrackCheckpoint))
         public trackCheckpoints;
@@ -145,7 +150,7 @@ contract IFAllocationMaster is
     );
     event SyncUserWeight(
         address receiver,
-        address user,
+        address[] users,
         uint24 srcTrackId,
         uint80 timestamp,
         uint64 dstChainId,
@@ -211,8 +216,7 @@ contract IFAllocationMaster is
         // get number of finished sales of this track
         uint24 nFinishedSales = trackCheckpoints[trackId][
             trackCheckpointCounts[trackId] - 1
-        ]
-        .numFinishedSales;
+        ].numFinishedSales;
 
         // update map that tracks timestamp numbers of finished sales
         trackFinishedSaleTimestamps[trackId][nFinishedSales] = uint80(
@@ -254,7 +258,7 @@ contract IFAllocationMaster is
 
         // update user rollover amount
         trackActiveRollOvers[trackId][_msgSender()][saleCount] = userCp
-        .stakeWeight;
+            .stakeWeight;
 
         // add new user rollover amount to total
         trackTotalActiveRollOvers[trackId][saleCount] += userCp.stakeWeight;
@@ -856,7 +860,7 @@ contract IFAllocationMaster is
     // Push
     function syncUserWeight(
         address receiver,
-        address user,
+        address[] calldata users,
         uint24 trackId,
         uint80 timestamp,
         uint64 dstChainId
@@ -865,15 +869,23 @@ contract IFAllocationMaster is
         require(!trackDisabled[trackId], 'track !disabled');
 
         // get user stake weight on this contract
-        uint192 userStakeWeight = getUserStakeWeight(trackId, user, timestamp);
+        uint192[] memory userStakeWeights = new uint192[](users.length);
+
+        for (uint256 i = 0; i < users.length; i++) {
+            userStakeWeights[i] = getUserStakeWeight(
+                trackId,
+                users[i],
+                timestamp
+            );
+        }
 
         // construct message data to be sent to dest contract
         bytes memory message = abi.encode(
             MessageRequest({
                 bridgeType: BridgeType.UserWeight,
-                user: user,
+                users: users,
                 timestamp: timestamp,
-                weight: userStakeWeight,
+                weights: userStakeWeights,
                 trackId: trackId
             })
         );
@@ -889,7 +901,7 @@ contract IFAllocationMaster is
 
         emit SyncUserWeight(
             receiver,
-            user,
+            users,
             trackId,
             timestamp,
             dstChainId,
@@ -906,16 +918,20 @@ contract IFAllocationMaster is
         // should be active track
         require(!trackDisabled[trackId], 'track disabled');
 
+        address[] memory users = new address[](1);
+        users[0] = _msgSender();
+
         // get total stake weight on this contract
-        uint192 totalStakeWeight = getTotalStakeWeight(trackId, timestamp);
+        uint192[] memory weights = new uint192[](1);
+        weights[0] = getTotalStakeWeight(trackId, timestamp);
 
         // construct message data to be sent to dest contract
         bytes memory message = abi.encode(
             MessageRequest({
                 bridgeType: BridgeType.TotalWeight,
-                user: _msgSender(),
+                users: users,
                 timestamp: timestamp,
-                weight: totalStakeWeight,
+                weights: weights,
                 trackId: trackId
             })
         );
