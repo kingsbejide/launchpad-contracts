@@ -23,7 +23,7 @@ npx hardhat test
 Run foundry test
 
 ```
-forge test
+forge test --fork-url $BSC_URL
 ```
 
 ## Deploy
