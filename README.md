@@ -9,12 +9,21 @@ https://docs.impossible.finance/launchpad/smart-contracts
 
 ```
 yarn install
+forge build
 ```
 
 ## Test
 
+Run hardhat tests
+
 ```
 npx hardhat test
+```
+
+Run foundry test
+
+```
+forge test
 ```
 
 ## Deploy
