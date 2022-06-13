@@ -1,5 +1,6 @@
 [default]
 src = 'contracts'
+test = 'foundry-test'
 out = 'artifacts'
 libs = ['lib', 'node_modules']
 remappings = [
@@ -8,6 +9,7 @@ remappings = [
     'erc-payable-token/=node_modules/erc-payable-token/',
     'hardhat/=node_modules/hardhat/',
     'sgn-v2-contracts/=lib/sgn-v2-contracts/',
+    'forge-std/=lib/forge-std/src/',
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
