@@ -150,7 +150,6 @@ contract IFAllocationMaster is
     );
     event SyncUserWeight(
         address receiver,
-        address[] users,
         uint24 srcTrackId,
         uint80 timestamp,
         uint64 dstChainId,
@@ -901,7 +900,6 @@ contract IFAllocationMaster is
 
         emit SyncUserWeight(
             receiver,
-            users,
             trackId,
             timestamp,
             dstChainId,
