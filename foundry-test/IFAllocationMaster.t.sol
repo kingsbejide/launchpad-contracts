@@ -66,12 +66,53 @@ contract ContractTest is Test {
         syncUser(users);
     }
 
-    function testSyncManyUser() public {
+    function testSyncHundredUsers() public {
         address[] memory users = new address[](100);
         for (uint i = 0; i < 100; i += 1) {
             users[i] = 0x1f1BDFE288a8C9ac31F1f7C70dfEE6c82EDF77f6;
         }
         syncUser(users);
+    }
+
+    function testSyncThousandUsers() public {
+        address[] memory users = new address[](1000);
+        for (uint i = 0; i < 1000; i += 1) {
+            users[i] = 0x1f1BDFE288a8C9ac31F1f7C70dfEE6c82EDF77f6;
+        }
+        syncUser(users);
+    }
+
+    function testSyncTotalWeight() public {
+        address[] memory users = new address[](1);
+        users[0] = address(this);
+        uint80 timestamp = uint80(block.timestamp);
+        uint192[] memory userStakeWeights = new uint192[](1);
+        userStakeWeights[0] = ifAllocationMaster.getTotalStakeWeight(0, timestamp);
+
+        bytes memory message = abi.encode(
+            IIFBridgableStakeWeight.MessageRequest({
+                bridgeType: IIFBridgableStakeWeight.BridgeType.TotalWeight,
+                users: users,
+                timestamp: timestamp,
+                weights: userStakeWeights,
+                trackId: 0
+            })
+        );
+
+        vm.expectEmit(true, false, false, true);
+        ifAllocationMaster.syncTotalWeight(
+            address(0),
+            0,
+            timestamp,
+            1
+        );
+        emitter.syncUserWeight(
+            address(ifAllocationMaster),
+            address(0),
+            1,
+            message,
+            0
+        );
     }
 }
 
