@@ -29,9 +29,7 @@ contract ContractTest is Test {
     function setUp() public {
     }
 
-    function testSyncOneUser() public {
-        address[] memory users = new address[](1);
-        users[0] = 0x1f1BDFE288a8C9ac31F1f7C70dfEE6c82EDF77f6;
+    function syncUser(address[] memory users) internal {
         uint80 timestamp = uint80(block.timestamp);
         uint192[] memory userStakeWeights = new uint192[](users.length);
 
@@ -60,6 +58,20 @@ contract ContractTest is Test {
             message,
             0
         );
+    }
+
+    function testSyncOneUser() public {
+        address[] memory users = new address[](1);
+        users[0] = 0x1f1BDFE288a8C9ac31F1f7C70dfEE6c82EDF77f6;
+        syncUser(users);
+    }
+
+    function testSyncManyUser() public {
+        address[] memory users = new address[](100);
+        for (uint i = 0; i < 100; i += 1) {
+            users[i] = 0x1f1BDFE288a8C9ac31F1f7C70dfEE6c82EDF77f6;
+        }
+        syncUser(users);
     }
 }
 
