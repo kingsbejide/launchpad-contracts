@@ -8,15 +8,15 @@ interface IIFBridgableStakeWeight {
     }
 
     struct MessageRequest {
-        // bridge type
-        BridgeType bridgeType;
         // user address
         address[] users;
-        // amount of weight at timestamp
-        uint192[] weights;
         // timestamp value
         uint80 timestamp;
+        // bridge type
+        BridgeType bridgeType;
         // track number
         uint24 trackId;
+        // amount of weight at timestamp
+        uint192[] weights;
     }
 }
