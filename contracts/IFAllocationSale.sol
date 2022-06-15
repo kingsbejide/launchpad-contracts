@@ -26,8 +26,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     uint256 public saleAmount;
     // tracks amount purchased by each address
     mapping(address => uint256) public paymentReceived;
-    // tracks amount claimed by each address
-    mapping(address => uint256) public paymentClaimed;
+    // tracks amount of tokens owed to each address
+    mapping(address => uint256) public totalOwed;
     // tracks whether user has already successfully withdrawn
     mapping(address => bool) public hasWithdrawn;
     // tracks whether sale has been cashed
@@ -266,6 +266,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     // Function for owner to set a withdraw delay
     function setWithdrawDelay(uint24 _withdrawDelay) external onlyOwner {
         withdrawDelay = _withdrawDelay;
+        latestClaimTime = Math.max(latestClaimTime, endTime + _withdrawDelay);
 
         // emit
         emit SetWithdrawDelay(_withdrawDelay);
@@ -393,6 +394,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
         // increase payment received amount
         paymentReceived[_msgSender()] += paymentAmount;
+        totalOwed[_msgSender()] += (paymentReceived[_msgSender()] * SALE_PRICE_DECIMALS) / salePrice;
 
         // increase total payment received amount
         totalPaymentReceived += paymentAmount;
@@ -434,18 +436,13 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // must not be a zero price sale
         require(salePrice != 0, 'use withdrawGiveaway');
         // get total payment received
-        uint256 totalClaimable = paymentReceived[_msgSender()];
         // prevent repeat withdraw
-        require(totalClaimable != 0, 'already withdrawn');
-
-        uint256 currentClaimable = getCurrentClaimable(totalClaimable, _msgSender());
-        paymentClaimed[_msgSender()] += currentClaimable;
+        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
 
         // calculate amount of sale token owed to buyer
-        // TODO: calculate saleTokenOwned earlier to prevent rounding error
-        uint256 saleTokenOwed = (currentClaimable * SALE_PRICE_DECIMALS) / salePrice;
-        console.log('s', saleTokenOwed);
-        console.log('c', paymentClaimed[_msgSender()]);
+        // TODO: calculate saleTokenOwned earlier to prevent rounding
+        uint256 saleTokenOwed = getCurrentClaimableToken();
+        totalOwed[_msgSender()] -= saleTokenOwed;
 
         // increment withdrawer count
         if (!hasWithdrawn[_msgSender()]) {
@@ -463,19 +460,17 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         emit Withdraw(_msgSender(), saleTokenOwed);
     }
 
-    function getCurrentClaimable(uint256 totalClaimable, address user) public view returns (uint256) {
+    function getCurrentClaimableToken() public view returns (uint256) {
         if (vestingEndTime != 0) {
             // users can get all of the tokens after vestingEndTime
             if (block.timestamp > vestingEndTime) {
-                console.log('r', paymentReceived[user]);
-                console.log('c', paymentClaimed[user]);
-                return paymentReceived[user] - paymentClaimed[user];
+                return totalOwed[_msgSender()];
             }
             // linear vesting
             // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
-            return totalClaimable * (block.timestamp - latestClaimTime) / (vestingEndTime - endTime + withdrawDelay);
+            return totalOwed[_msgSender()] * (block.timestamp - latestClaimTime) / (vestingEndTime - endTime + withdrawDelay);
         }
-        return totalClaimable;
+        return totalOwed[_msgSender()];
     }
 
     function getUserStakeValue(address user) public view returns (uint256) {

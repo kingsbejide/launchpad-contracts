@@ -766,12 +766,7 @@ export default describe('IF Allocation Sale', function () {
   })
 
   it('can set vesting time', async function () {
-    IFAllocationSale.connect(owner).setVestingEndTime(endTime)
-    let vet = await IFAllocationSale.getVestingEndTime()
-    console.log('vet:', vet)
     IFAllocationSale.connect(owner).setVestingEndTime(vestingEndTime)
-    vet = await IFAllocationSale.getVestingEndTime()
-    console.log('vet:', vet)
     mineNext()
 
     // amount to pay
@@ -791,21 +786,59 @@ export default describe('IF Allocation Sale', function () {
     mineNext()
 
     // fast forward from current time to after end time
-    // mineTimeDelta(endTime - (await getBlockTime()) + ((vestingEndTime - endTime) / 3))
     mineTimeDelta(endTime - (await getBlockTime()))
+
     // test withdraw
     await IFAllocationSale.connect(buyer).withdraw()
-    console.log(await SaleToken.balanceOf(buyer.address))
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('1')
 
     mineTimeDelta((vestingEndTime - endTime) / 3)
     await IFAllocationSale.connect(buyer).withdraw()
-    console.log(await SaleToken.balanceOf(buyer.address))
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('11113')
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('11112')
 
     mineTimeDelta((vestingEndTime - endTime) / 3 * 2)
     await IFAllocationSale.connect(buyer).withdraw()
-    console.log(await SaleToken.balanceOf(buyer.address))
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
+  })
+
+  it('can set vesting time and withdrawal delay', async function () {
+    IFAllocationSale.connect(owner).setVestingEndTime(vestingEndTime)
+    mineNext()
+
+    // amount to pay
+    const paymentAmount = '333330'
+
+    // fast forward from current time to start time
+    mineTimeDelta(startTime - (await getBlockTime()))
+
+    // purchase
+    mineNext()
+    await PaymentToken.connect(buyer).approve(
+      IFAllocationSale.address,
+      paymentAmount
+    )
+    await IFAllocationSale.connect(buyer).purchase(paymentAmount)
+
+    mineNext()
+
+    // fast forward from current time to after end time
+    mineTimeDelta(endTime - (await getBlockTime()))
+
+    // test withdraw
+    await IFAllocationSale.connect(buyer).withdraw()
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('1')
+
+    // set withdrawal delay
+    await IFAllocationSale.connect(owner).setWithdrawDelay(10000)
+    await expect(IFAllocationSale.connect(buyer).withdraw()).to.be.reverted
+
+    // passed 2 blocks already
+    mineTimeDelta(9998)
+    await IFAllocationSale.connect(buyer).withdraw()
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('2')
+
+    mineTimeDelta(vestingEndTime - endTime)
+    await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
 })
