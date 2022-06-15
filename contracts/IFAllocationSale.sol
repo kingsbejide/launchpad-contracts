@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
@@ -435,13 +435,14 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         );
         // must not be a zero price sale
         require(salePrice != 0, 'use withdrawGiveaway');
-        // get total payment received
+        // get total token owed
         // prevent repeat withdraw
         require(totalOwed[_msgSender()] != 0, 'already withdrawn');
 
         // calculate amount of sale token owed to buyer
-        // TODO: calculate saleTokenOwned earlier to prevent rounding
-        uint256 saleTokenOwed = getCurrentClaimableToken();
+        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
+
+        // update totalOwed
         totalOwed[_msgSender()] -= saleTokenOwed;
 
         // increment withdrawer count
@@ -460,17 +461,17 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         emit Withdraw(_msgSender(), saleTokenOwed);
     }
 
-    function getCurrentClaimableToken() public view returns (uint256) {
+    function getCurrentClaimableToken(uint256 total) public view returns (uint256) {
         if (vestingEndTime != 0) {
             // users can get all of the tokens after vestingEndTime
             if (block.timestamp > vestingEndTime) {
-                return totalOwed[_msgSender()];
+                return total;
             }
             // linear vesting
             // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
-            return totalOwed[_msgSender()] * (block.timestamp - latestClaimTime) / (vestingEndTime - endTime + withdrawDelay);
+            return total * (block.timestamp - latestClaimTime) / (vestingEndTime - endTime + withdrawDelay);
         }
-        return totalOwed[_msgSender()];
+        return total;
     }
 
     function getUserStakeValue(address user) public view returns (uint256) {
@@ -497,12 +498,12 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     {
         // must be past end timestamp plus withdraw delay
         require(
-            endTime + withdrawDelay < block.timestamp,
+            (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
             'cannot withdraw yet'
         );
-        // TODO: remove this after implementing currentClaimable calculation
+        // get total token owed
         // prevent repeat withdraw
-        require(hasWithdrawn[_msgSender()] == false, 'already withdrawn');
+        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
         // must be a zero price sale
         require(salePrice == 0, 'not a giveaway');
         // if there is whitelist, require that user is whitelisted by checking proof
@@ -514,19 +515,23 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // each participant in the zero cost "giveaway" gets a flat amount of sale token
         if (saleTokenAllocationOverride == 0) {
             // if there is no override, fetch the total payment allocation
-            saleTokenOwed = getUserStakeValue(_msgSender());
+            saleTokenOwed = getCurrentClaimableToken(getUserStakeValue(_msgSender()));
         } else {
             // if override, set the override amount
-            saleTokenOwed = saleTokenAllocationOverride;
+            saleTokenOwed = getCurrentClaimableToken(saleTokenAllocationOverride);
         }
         // sale token owed must be greater than 0
         require(saleTokenOwed != 0, 'withdraw giveaway amount 0');
 
-        // set withdrawn to true
-        hasWithdrawn[_msgSender()] = true;
+        // update totalOwed
+        totalOwed[_msgSender()] -= saleTokenOwed;
 
         // increment withdrawer count
-        withdrawerCount += 1;
+        if (!hasWithdrawn[_msgSender()]) {
+            withdrawerCount += 1;
+            // set withdrawn to true
+            hasWithdrawn[_msgSender()] = true;
+        }
 
         // transfer giveaway sale token to participant
         saleToken.safeTransfer(_msgSender(), saleTokenOwed);
