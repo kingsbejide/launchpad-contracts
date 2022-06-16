@@ -842,7 +842,7 @@ export default describe('IF Allocation Sale', function () {
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
 
-  it('vesting withdrawGiveaway', async function () {
+  it('can vest with withdrawGiveaway', async function () {
     mineNext()
     // here set up a new IFAllocationSale with salePrice of 0, because
     // provided fixture sale does not have salePrice set to 0
@@ -863,9 +863,7 @@ export default describe('IF Allocation Sale', function () {
       endTime, // doesn't matter
       maxTotalDeposit // doesn't matter
     )
-    mineNext()
     // fund sale
-    mineNext()
     await SaleToken.connect(seller).approve(
       IFAllocationSale.address,
       fundAmount
