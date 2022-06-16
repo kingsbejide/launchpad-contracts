@@ -796,7 +796,7 @@ export default describe('IF Allocation Sale', function () {
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('11112')
 
-    mineTimeDelta((vestingEndTime - endTime) / 3 * 2)
+    mineTimeDelta(vestingEndTime - endTime)
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
@@ -807,6 +807,7 @@ export default describe('IF Allocation Sale', function () {
 
     // amount to pay
     const paymentAmount = '333330'
+    const withdrawDelay = 10000
 
     // fast forward from current time to start time
     mineTimeDelta(startTime - (await getBlockTime()))
@@ -829,11 +830,11 @@ export default describe('IF Allocation Sale', function () {
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('1')
 
     // set withdrawal delay
-    await IFAllocationSale.connect(owner).setWithdrawDelay(10000)
+    await IFAllocationSale.connect(owner).setWithdrawDelay(withdrawDelay)
     await expect(IFAllocationSale.connect(buyer).withdraw()).to.be.reverted
+    mineNext()
 
-    // passed 2 blocks already
-    mineTimeDelta(9998)
+    mineTimeDelta(endTime + withdrawDelay - (await getBlockTime()))
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('2')
 
@@ -843,6 +844,7 @@ export default describe('IF Allocation Sale', function () {
   })
 
   it('can vest with withdrawGiveaway', async function () {
+    const withdrawDelay = 10000
     mineNext()
     // here set up a new IFAllocationSale with salePrice of 0, because
     // provided fixture sale does not have salePrice set to 0
@@ -883,12 +885,12 @@ export default describe('IF Allocation Sale', function () {
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('2')
 
     // set withdrawal delay
-    await IFAllocationSale.connect(owner).setWithdrawDelay(10000)
+    await IFAllocationSale.connect(owner).setWithdrawDelay(withdrawDelay)
     await expect(IFAllocationSale.connect(buyer).withdrawGiveaway([])).to.be.reverted
 
-    mineTimeDelta(9999)
+    mineTimeDelta(endTime + withdrawDelay - (await getBlockTime()))
     await IFAllocationSale.connect(buyer).withdrawGiveaway([])
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('5')
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('3')
 
     mineTimeDelta(vestingEndTime - endTime)
     await IFAllocationSale.connect(buyer).withdrawGiveaway([])

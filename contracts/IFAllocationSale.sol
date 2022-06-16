@@ -458,7 +458,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     }
 
     function getCurrentClaimableToken(uint256 total) public view returns (uint256) {
-        if (vestingEndTime != 0 || block.timestamp < vestingEndTime) {
+        if (vestingEndTime != 0 && block.timestamp < vestingEndTime) {
             // linear vesting
             // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
             return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - (endTime + withdrawDelay));
