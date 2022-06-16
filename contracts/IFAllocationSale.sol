@@ -496,6 +496,21 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         external
         nonReentrant
     {
+        if (!hasWithdrawn[_msgSender()]) {
+            // increment withdrawer count
+            withdrawerCount += 1;
+            // set withdrawn to true
+            hasWithdrawn[_msgSender()] = true;
+            // initialize totalOwed
+            // each participant in the zero cost "giveaway" gets a flat amount of sale token
+            if (saleTokenAllocationOverride == 0) {
+                // if there is no override, fetch the total payment allocation
+                totalOwed[_msgSender()] = getUserStakeValue(_msgSender());
+            } else {
+                // if override, set the override amount
+                totalOwed[_msgSender()] = saleTokenAllocationOverride;
+            }
+        }
         // must be past end timestamp plus withdraw delay
         require(
             (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
@@ -503,7 +518,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         );
         // get total token owed
         // prevent repeat withdraw
-        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
+        require(totalOwed[_msgSender()] > 0, 'already withdrawn');
         // must be a zero price sale
         require(salePrice == 0, 'not a giveaway');
         // if there is whitelist, require that user is whitelisted by checking proof
@@ -511,27 +526,13 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
             'proof invalid'
         );
-        uint256 saleTokenOwed;
-        // each participant in the zero cost "giveaway" gets a flat amount of sale token
-        if (saleTokenAllocationOverride == 0) {
-            // if there is no override, fetch the total payment allocation
-            saleTokenOwed = getCurrentClaimableToken(getUserStakeValue(_msgSender()));
-        } else {
-            // if override, set the override amount
-            saleTokenOwed = getCurrentClaimableToken(saleTokenAllocationOverride);
-        }
+        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
         // sale token owed must be greater than 0
         require(saleTokenOwed != 0, 'withdraw giveaway amount 0');
 
         // update totalOwed
         totalOwed[_msgSender()] -= saleTokenOwed;
 
-        // increment withdrawer count
-        if (!hasWithdrawn[_msgSender()]) {
-            withdrawerCount += 1;
-            // set withdrawn to true
-            hasWithdrawn[_msgSender()] = true;
-        }
 
         // transfer giveaway sale token to participant
         saleToken.safeTransfer(_msgSender(), saleTokenOwed);

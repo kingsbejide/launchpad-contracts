@@ -841,4 +841,59 @@ export default describe('IF Allocation Sale', function () {
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
+
+  it('vesting withdrawGiveaway', async function () {
+    mineNext()
+    // here set up a new IFAllocationSale with salePrice of 0, because
+    // provided fixture sale does not have salePrice set to 0
+
+    // deploy 0 price allocation sale
+    const IFAllocationSaleFactory = await ethers.getContractFactory(
+      'IFAllocationSale'
+    )
+    IFAllocationSale = await IFAllocationSaleFactory.deploy(
+      0, // sale price
+      seller.address,
+      PaymentToken.address, // doesn't matter
+      SaleToken.address,
+      IFAllocationMaster.address, // doesn't matter
+      trackId, // doesn't matter
+      snapshotTimestamp, // doesn't matter
+      startTime, // doesn't matter
+      endTime, // doesn't matter
+      maxTotalDeposit // doesn't matter
+    )
+    mineNext()
+    // fund sale
+    mineNext()
+    await SaleToken.connect(seller).approve(
+      IFAllocationSale.address,
+      fundAmount
+    ) // approve
+    await IFAllocationSale.connect(seller).fund(fundAmount) // fund
+
+    // set sale token allocation override (flat amount every participant receives)
+    await IFAllocationSale.setSaleTokenAllocationOverride(33330)
+
+    IFAllocationSale.connect(owner).setVestingEndTime(vestingEndTime)
+
+    // fast forward from current time to after end time
+    mineTimeDelta(endTime - (await getBlockTime()))
+
+    // test withdraw
+    await IFAllocationSale.connect(buyer).withdrawGiveaway([])
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('2')
+
+    // set withdrawal delay
+    await IFAllocationSale.connect(owner).setWithdrawDelay(10000)
+    await expect(IFAllocationSale.connect(buyer).withdrawGiveaway([])).to.be.reverted
+
+    mineTimeDelta(9999)
+    await IFAllocationSale.connect(buyer).withdrawGiveaway([])
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('5')
+
+    mineTimeDelta(vestingEndTime - endTime)
+    await IFAllocationSale.connect(buyer).withdrawGiveaway([])
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('33330')
+  })
 })
