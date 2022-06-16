@@ -496,6 +496,13 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         external
         nonReentrant
     {
+        // must be past end timestamp plus withdraw delay
+        require(
+            (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
+            'cannot withdraw yet'
+        );
+
+        // saleTokenAllocationOverride has been updated
         if (!hasWithdrawn[_msgSender()]) {
             // increment withdrawer count
             withdrawerCount += 1;
@@ -511,14 +518,9 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
                 totalOwed[_msgSender()] = saleTokenAllocationOverride;
             }
         }
-        // must be past end timestamp plus withdraw delay
-        require(
-            (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
-            'cannot withdraw yet'
-        );
         // get total token owed
         // prevent repeat withdraw
-        require(totalOwed[_msgSender()] > 0, 'already withdrawn');
+        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
         // must be a zero price sale
         require(salePrice == 0, 'not a giveaway');
         // if there is whitelist, require that user is whitelisted by checking proof
