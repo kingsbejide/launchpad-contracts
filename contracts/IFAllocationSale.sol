@@ -5,7 +5,6 @@ pragma solidity ^0.8.4;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
-import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './IFAllocationMaster.sol';
@@ -281,9 +280,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         emit SetVestingEndTime(_vestingEndTime);
     }
 
-    function getVestingEndTime() public view returns (uint256) {
-        return vestingEndTime;
-    }
     // Returns true if user is on whitelist, otherwise false
     function checkWhitelist(address user, bytes32[] calldata merkleProof)
         public
