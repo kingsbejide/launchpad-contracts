@@ -29,6 +29,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     mapping(address => uint256) public totalOwed;
     // tracks whether user has already successfully withdrawn
     mapping(address => bool) public hasWithdrawn;
+    // the most recent time the user claimed the saleToken
+    mapping(address => uint256) public latestClaimTime;
     // tracks whether sale has been cashed
     bool public hasCashed;
 
@@ -70,8 +72,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     uint256 public startTime;
     // end timestamp when sale is active (inclusive)
     uint256 public endTime;
-    // the most recent time the user claimed the saleToken
-    uint256 public latestClaimTime;
     // withdraw/cash delay timestamp (inclusive)
     uint24 public withdrawDelay;
     // the time where the user can take all of the vested saleToken
@@ -159,7 +159,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         startTime = _startTime;
         endTime = _endTime;
         maxTotalPayment = _maxTotalPayment; // can be 0 (for giveaway)
-        latestClaimTime = _endTime;
     }
 
     // MODIFIERS
@@ -265,7 +264,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     // Function for owner to set a withdraw delay
     function setWithdrawDelay(uint24 _withdrawDelay) external onlyOwner {
         withdrawDelay = _withdrawDelay;
-        latestClaimTime = Math.max(latestClaimTime, endTime + _withdrawDelay);
 
         // emit
         emit SetWithdrawDelay(_withdrawDelay);
@@ -425,10 +423,12 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // so we do not check whitelist here
 
         // must be past end timestamp plus withdraw delay
-        require(
-            (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
-            'cannot withdraw yet'
-        );
+        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        // initialize latestClaimTime and update it if withdrawDelay is updated
+        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
+            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
+        }
+
         // must not be a zero price sale
         require(salePrice != 0, 'use withdrawGiveaway');
         // get total token owed
@@ -449,7 +449,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         }
 
         // update last claimed time
-        latestClaimTime = block.timestamp;
+        latestClaimTime[_msgSender()] = block.timestamp;
         // transfer owed sale token to buyer
         saleToken.safeTransfer(_msgSender(), saleTokenOwed);
 
@@ -458,15 +458,12 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     }
 
     function getCurrentClaimableToken(uint256 total) public view returns (uint256) {
-        if (vestingEndTime != 0) {
-            // users can get all of the tokens after vestingEndTime
-            if (block.timestamp > vestingEndTime) {
-                return total;
-            }
+        if (vestingEndTime != 0 || block.timestamp < vestingEndTime) {
             // linear vesting
             // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
-            return total * (block.timestamp - latestClaimTime) / (vestingEndTime - endTime + withdrawDelay);
+            return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - endTime + withdrawDelay);
         }
+        // users can get all of the tokens after vestingEndTime
         return total;
     }
 
@@ -493,10 +490,12 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         nonReentrant
     {
         // must be past end timestamp plus withdraw delay
-        require(
-            (endTime + withdrawDelay < block.timestamp) && (latestClaimTime < block.timestamp),
-            'cannot withdraw yet'
-        );
+        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+
+        // initialize latestClaimTime and update it if withdrawDelay is updated
+        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
+            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
+        }
 
         // saleTokenAllocationOverride has been updated
         if (!hasWithdrawn[_msgSender()]) {
