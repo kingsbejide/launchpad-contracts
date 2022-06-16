@@ -271,7 +271,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
     // Function for owner to set a vesting end time
     function setVestingEndTime(uint256 _vestingEndTime) external onlyOwner {
-        // require(_vestingEndTime > endTime + withdrawDelay, "Vesting end time has to be after withdrawl start time");
+        require(_vestingEndTime > endTime + withdrawDelay, "Vesting end time has to be after withdrawl start time");
         vestingEndTime = _vestingEndTime;
 
         // emit
@@ -461,7 +461,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         if (vestingEndTime != 0 || block.timestamp < vestingEndTime) {
             // linear vesting
             // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
-            return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - endTime + withdrawDelay);
+            return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - (endTime + withdrawDelay));
         }
         // users can get all of the tokens after vestingEndTime
         return total;
