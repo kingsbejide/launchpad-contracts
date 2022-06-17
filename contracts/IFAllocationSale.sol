@@ -300,6 +300,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         uint8 totalPct;
         for (uint i = 0; i < dates.length; i++) {
             require(maxDate < dates[i], "dates not in ascending order");
+            maxDate = dates[i];
             cliffPeriod[i] = Cliff(dates[i], pct[i]);
         }
         require(totalPct == 100, "total percentage doesn't equal 100");
