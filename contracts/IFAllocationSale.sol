@@ -76,7 +76,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     IFAllocationMaster public allocationMaster;
     // track id
     uint24 public trackId;
-    // allocation snapshot blocFail with error 'ERC20: transfer amount exceeds allowance'k
+    // allocation snapshot block
     uint80 public allocSnapshotTimestamp;
     // start timestamp when sale is active (inclusive)
     uint256 public startTime;
@@ -474,7 +474,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         }
         // cliff vesting
         if (cliffPeriod.length != 0 && cliffPeriod[cliffPeriod.length - 1].date > block.timestamp) {
-            uint256 claimablePct = 0;
+            uint8 claimablePct = 0;
             for (uint i = 0; i < cliffPeriod.length; i++) {
                 // if the cliff timestamp has been passed, add the claimable percentage
                 if (cliffPeriod[i].date < block.timestamp) { break; }
