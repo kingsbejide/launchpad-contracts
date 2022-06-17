@@ -12,6 +12,14 @@ import './IFAllocationMaster.sol';
 contract IFAllocationSale is Ownable, ReentrancyGuard {
     using SafeERC20 for ERC20;
 
+    // store how many percentage of the token can be claimed at a certain cliff date
+    struct Cliff {
+        // the date when the percentage of token can be claimed
+        uint256 date;
+        // the percentage token that can be claimed
+        uint8 pct;
+    }
+
     // CONSTANTS
 
     // number of decimals of sale price
@@ -31,6 +39,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     mapping(address => bool) public hasWithdrawn;
     // the most recent time the user claimed the saleToken
     mapping(address => uint256) public latestClaimTime;
+    // cliff vesting time and percentage
+    Cliff[] public cliffPeriod;
     // tracks whether sale has been cashed
     bool public hasCashed;
 
@@ -66,7 +76,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     IFAllocationMaster public allocationMaster;
     // track id
     uint24 public trackId;
-    // allocation snapshot block
+    // allocation snapshot blocFail with error 'ERC20: transfer amount exceeds allowance'k
     uint80 public allocSnapshotTimestamp;
     // start timestamp when sale is active (inclusive)
     uint256 public startTime;
@@ -95,6 +105,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     event SetWhitelist(bytes32 indexed whitelistRootHash);
     event SetWithdrawDelay(uint24 indexed withdrawDelay);
     event SetVestingEndTime(uint256 indexed vestingEndTime);
+    event SetCliffVestingPeriod(Cliff[] indexed cliffPeriod);
     event Purchase(address indexed sender, uint256 paymentAmount);
     event Withdraw(address indexed sender, uint256 amount);
     event Cash(
@@ -278,6 +289,22 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         emit SetVestingEndTime(_vestingEndTime);
     }
 
+    function setCliffPeriod(uint256[] calldata dates, uint8[] calldata pct) external onlyOwner {
+        // sale must not have started
+        require(block.timestamp < startTime, 'sale already started');
+
+        // check if dates and pct can be mapped
+        require(dates.length == pct.length, "dates and pct doesn't match");
+
+        uint256 maxDate;
+        uint8 totalPct;
+        for (uint i = 0; i < dates.length; i++) {
+            require(maxDate < dates[i], "dates not in ascending order");
+            cliffPeriod[i] = Cliff(dates[i], pct[i]);
+        }
+        require(totalPct == 100, "total percentage doesn't equal 100");
+    }
+
     // Returns true if user is on whitelist, otherwise false
     function checkWhitelist(address user, bytes32[] calldata merkleProof)
         public
@@ -422,46 +449,39 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         // not have any sale tokens to withdraw
         // so we do not check whitelist here
 
-        // must be past end timestamp plus withdraw delay
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
-        // initialize latestClaimTime and update it if withdrawDelay is updated
-        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
-            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
-        }
-
         // must not be a zero price sale
         require(salePrice != 0, 'use withdrawGiveaway');
-        // get total token owed
-        // prevent repeat withdraw
-        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
+        // must be past end timestamp plus withdraw delay
+        // must pass the first cliff date if there's a cliff period
+        require(
+            endTime + withdrawDelay < block.timestamp &&
+            (cliffPeriod.length == 0 || cliffPeriod[0].date < block.timestamp)
+            , 'cannot withdraw yet'
+        );
 
-        // calculate amount of sale token owed to buyer
-        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
 
-        // update totalOwed
-        totalOwed[_msgSender()] -= saleTokenOwed;
-
-        // increment withdrawer count
-        if (!hasWithdrawn[_msgSender()]) {
-            withdrawerCount += 1;
-            // set withdrawn to true
-            hasWithdrawn[_msgSender()] = true;
-        }
-
-        // update last claimed time
-        latestClaimTime[_msgSender()] = block.timestamp;
-        // transfer owed sale token to buyer
-        saleToken.safeTransfer(_msgSender(), saleTokenOwed);
-
-        // emit
-        emit Withdraw(_msgSender(), saleTokenOwed);
-    }
+        // send token and update states
+        uint256 tokenOwed = sendSaleToken();
+        // sale token owed must be greater than 0
+        require(tokenOwed != 0, 'already withdrawn');
+    }   
 
     function getCurrentClaimableToken(uint256 total) public view returns (uint256) {
-        if (vestingEndTime != 0 && block.timestamp < vestingEndTime) {
-            // linear vesting
-            // currentClaimable = (now - last claimed time) / (total vesting time) * totalClaimable
+        // linear vesting
+        if (vestingEndTime > block.timestamp) {
+            // current claimable = (now - last claimed time) / (total vesting time) * totalClaimable
             return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - (endTime + withdrawDelay));
+        }
+        // cliff vesting
+        if (cliffPeriod.length != 0 && cliffPeriod[cliffPeriod.length - 1].date > block.timestamp) {
+            uint256 claimablePct = 0;
+            for (uint i = 0; i < cliffPeriod.length; i++) {
+                // if the cliff timestamp has been passed, add the claimable percentage
+                if (cliffPeriod[i].date < block.timestamp) { break; }
+                claimablePct += cliffPeriod[i].pct;
+            }
+            // current claimable = total * claimiable percentage
+            return total * claimablePct / 100;
         }
         // users can get all of the tokens after vestingEndTime
         return total;
@@ -489,21 +509,23 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         external
         nonReentrant
     {
+        // must be a zero price sale
+        require(salePrice == 0, 'not a giveaway');
+        // if there is whitelist, require that user is whitelisted by checking proof
+        require(
+            whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
+            'proof invalid'
+        );
         // must be past end timestamp plus withdraw delay
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        // must pass the first cliff date if there's a cliff period
+        require(
+            endTime + withdrawDelay < block.timestamp &&
+            (cliffPeriod.length == 0 || cliffPeriod[0].date < block.timestamp)
+            , 'cannot withdraw yet'
+        );
 
-        // initialize latestClaimTime and update it if withdrawDelay is updated
-        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
-            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
-        }
-
-        // saleTokenAllocationOverride has been updated
+        // initialize totalOwed before the first time of withdrawal
         if (!hasWithdrawn[_msgSender()]) {
-            // increment withdrawer count
-            withdrawerCount += 1;
-            // set withdrawn to true
-            hasWithdrawn[_msgSender()] = true;
-            // initialize totalOwed
             // each participant in the zero cost "giveaway" gets a flat amount of sale token
             if (saleTokenAllocationOverride == 0) {
                 // if there is no override, fetch the total payment allocation
@@ -513,29 +535,11 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
                 totalOwed[_msgSender()] = saleTokenAllocationOverride;
             }
         }
-        // get total token owed
-        // prevent repeat withdraw
-        require(totalOwed[_msgSender()] != 0, 'already withdrawn');
-        // must be a zero price sale
-        require(salePrice == 0, 'not a giveaway');
-        // if there is whitelist, require that user is whitelisted by checking proof
-        require(
-            whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
-            'proof invalid'
-        );
-        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
+
+        // send token and update states
+        uint256 saleTokenOwed = sendSaleToken();
         // sale token owed must be greater than 0
         require(saleTokenOwed != 0, 'withdraw giveaway amount 0');
-
-        // update totalOwed
-        totalOwed[_msgSender()] -= saleTokenOwed;
-
-
-        // transfer giveaway sale token to participant
-        saleToken.safeTransfer(_msgSender(), saleTokenOwed);
-
-        // emit
-        emit Withdraw(_msgSender(), saleTokenOwed);
     }
 
     // Function for funder to cash in payment token and unsold sale token
@@ -591,5 +595,37 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
         // emit
         emit EmergencyTokenRetrieve(_msgSender(), tokenBalance);
+    }
+
+    function sendSaleToken() internal returns (uint256) {
+        // increment withdrawer count
+        if (!hasWithdrawn[_msgSender()]) {
+            withdrawerCount += 1;
+            // set withdrawn to true
+            hasWithdrawn[_msgSender()] = true;
+        }
+
+        // initialize latestClaimTime and update it if withdrawDelay is updated
+        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
+            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
+        }
+        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
+
+        // sale token owed must be greater than 0
+        require(saleTokenOwed != 0, 'withdraw giveaway amount 0');
+
+        // update totalOwed
+        totalOwed[_msgSender()] -= saleTokenOwed;
+        // make sure user can't withdraw more than they owned
+        require(totalOwed[_msgSender()] >= 0, "withdraw amount exceed limit");
+        // update last claimed time
+        latestClaimTime[_msgSender()] = block.timestamp;
+        // transfer giveaway sale token to participant
+        saleToken.safeTransfer(_msgSender(), saleTokenOwed);
+
+        // emit
+        emit Withdraw(_msgSender(), saleTokenOwed);
+
+        return saleTokenOwed;
     }
 }
