@@ -9,6 +9,7 @@ import {
   computeMerkleProof,
   getAddressIndex,
 } from '../library/merkleWhitelist'
+import { BlockForkEvent } from '@ethersproject/abstract-provider'
 
 export default describe('IF Allocation Sale', function () {
   // unset timeout from the test
@@ -765,7 +766,7 @@ export default describe('IF Allocation Sale', function () {
     expect(await SaleToken.balanceOf(IFAllocationSale.address)).to.equal('0')
   })
 
-  it('can set vesting time', async function () {
+  it('can set linear vesting', async function () {
     IFAllocationSale.connect(owner).setVestingEndTime(vestingEndTime)
     mineNext()
 
@@ -787,58 +788,15 @@ export default describe('IF Allocation Sale', function () {
 
     // fast forward from current time to after end time
     mineTimeDelta(endTime - (await getBlockTime()))
-
     // test withdraw
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('1')
 
     mineTimeDelta((vestingEndTime - endTime) / 3)
     await IFAllocationSale.connect(buyer).withdraw()
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('11112')
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('11113')
 
-    mineTimeDelta(vestingEndTime - endTime)
-    await IFAllocationSale.connect(buyer).withdraw()
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
-  })
-
-  it('can set vesting time and withdrawal delay', async function () {
-    IFAllocationSale.connect(owner).setVestingEndTime(vestingEndTime)
-    mineNext()
-
-    // amount to pay
-    const paymentAmount = '333330'
-    const withdrawDelay = 10000
-
-    // fast forward from current time to start time
-    mineTimeDelta(startTime - (await getBlockTime()))
-
-    // purchase
-    mineNext()
-    await PaymentToken.connect(buyer).approve(
-      IFAllocationSale.address,
-      paymentAmount
-    )
-    await IFAllocationSale.connect(buyer).purchase(paymentAmount)
-
-    mineNext()
-
-    // fast forward from current time to after end time
-    mineTimeDelta(endTime - (await getBlockTime()))
-
-    // test withdraw
-    await IFAllocationSale.connect(buyer).withdraw()
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('1')
-
-    // set withdrawal delay
-    await IFAllocationSale.connect(owner).setWithdrawDelay(withdrawDelay)
-    await expect(IFAllocationSale.connect(buyer).withdraw()).to.be.reverted
-    mineNext()
-
-    mineTimeDelta(endTime + withdrawDelay - (await getBlockTime()))
-    await IFAllocationSale.connect(buyer).withdraw()
-    expect(await SaleToken.balanceOf(buyer.address)).to.equal('2')
-
-    mineTimeDelta(vestingEndTime - endTime)
+    mineTimeDelta((vestingEndTime - endTime) / 3 * 2)
     await IFAllocationSale.connect(buyer).withdraw()
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
@@ -895,5 +853,45 @@ export default describe('IF Allocation Sale', function () {
     mineTimeDelta(vestingEndTime - endTime)
     await IFAllocationSale.connect(buyer).withdrawGiveaway([])
     expect(await SaleToken.balanceOf(buyer.address)).to.equal('33330')
+  })
+
+  it('can set cliff vesting', async function () {
+    // amount to pay
+    const paymentAmount = 333330
+
+    const cliffInterval = Math.floor(vestingEndTime / 3)
+    const cliffPeriod = [endTime , endTime + cliffInterval * 1, endTime + cliffInterval * 2, endTime + cliffInterval * 3]
+    const cliffPct = [10, 20, 30, 40]
+    await IFAllocationSale.connect(owner).setCliffPeriod(cliffPeriod, cliffPct)
+
+    // fast forward from current time to start time
+    mineTimeDelta(startTime - (await getBlockTime()))
+    // purchase
+    mineNext()
+    await PaymentToken.connect(buyer).approve(
+      IFAllocationSale.address,
+      paymentAmount
+    )
+    await IFAllocationSale.connect(buyer).purchase(paymentAmount)
+
+    mineTimeDelta(endTime - (await getBlockTime()))
+
+    // test withdraw
+    await IFAllocationSale.connect(buyer).withdraw()
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('3333')
+
+    // just before the second cliff time
+    mineNext()
+    mineTimeDelta((endTime + cliffInterval * 1) - (await getBlockTime()) - 2)
+    await expect(IFAllocationSale.connect(buyer).withdraw()).to.be.reverted
+
+    mineNext()
+    await IFAllocationSale.connect(buyer).withdraw()
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('9999')
+
+
+    mineTimeDelta(cliffPeriod[3] - (await getBlockTime()))
+    await IFAllocationSale.connect(buyer).withdraw()
+    expect(await SaleToken.balanceOf(buyer.address)).to.equal('33333')
   })
 })

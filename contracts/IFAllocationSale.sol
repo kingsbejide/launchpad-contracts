@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/cryptography/MerkleProof.sol';
+import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './IFAllocationMaster.sol';
@@ -15,7 +16,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     // store how many percentage of the token can be claimed at a certain cliff date
     struct Cliff {
         // the date when the percentage of token can be claimed
-        uint256 date;
+        uint256 claimTime;
         // the percentage token that can be claimed
         uint8 pct;
     }
@@ -35,6 +36,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     mapping(address => uint256) public paymentReceived;
     // tracks amount of tokens owed to each address
     mapping(address => uint256) public totalOwed;
+    // tracks amount of initialt tokens owed to each address
+    mapping(address => uint256) public totalOwedInitial;
     // tracks whether user has already successfully withdrawn
     mapping(address => bool) public hasWithdrawn;
     // the most recent time the user claimed the saleToken
@@ -282,28 +285,36 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
     // Function for owner to set a vesting end time
     function setVestingEndTime(uint256 _vestingEndTime) external onlyOwner {
-        require(_vestingEndTime > endTime + withdrawDelay, "Vesting end time has to be after withdrawl start time");
+        require(_vestingEndTime > endTime + withdrawDelay, "Vesting end time has to be after withdrawal start time");
         vestingEndTime = _vestingEndTime;
 
         // emit
         emit SetVestingEndTime(_vestingEndTime);
     }
 
-    function setCliffPeriod(uint256[] calldata dates, uint8[] calldata pct) external onlyOwner {
+    function setCliffPeriod(uint256[] calldata claimTimes, uint8[] calldata pct) external onlyOwner {
         // sale must not have started
         require(block.timestamp < startTime, 'sale already started');
 
         // check if dates and pct can be mapped
-        require(dates.length == pct.length, "dates and pct doesn't match");
+        require(claimTimes.length == pct.length, "dates and pct doesn't match");
+
+        require(claimTimes.length > 0, "input is empty");
+
+        // clear the past entry
+        delete cliffPeriod;
 
         uint256 maxDate;
         uint8 totalPct;
-        for (uint i = 0; i < dates.length; i++) {
-            require(maxDate < dates[i], "dates not in ascending order");
-            maxDate = dates[i];
-            cliffPeriod[i] = Cliff(dates[i], pct[i]);
+        uint8 i = 0;
+        for (; i < claimTimes.length; i++) {
+            require(maxDate < claimTimes[i], "dates not in ascending order");
+            maxDate = claimTimes[i];
+            totalPct += pct[i];
+            cliffPeriod.push(Cliff(claimTimes[i], pct[i]));
         }
-        require(totalPct == 100, "total percentage doesn't equal 100");
+        // require(totalPct < 100, "total input percentage must be smaller than 100");
+        // cliffPeriod[i + 1] = Cliff(endTime, 100 - totalPct);
     }
 
     // Returns true if user is on whitelist, otherwise false
@@ -416,7 +427,8 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
         // increase payment received amount
         paymentReceived[_msgSender()] += paymentAmount;
-        totalOwed[_msgSender()] += (paymentReceived[_msgSender()] * SALE_PRICE_DECIMALS) / salePrice;
+        totalOwedInitial[_msgSender()] += (paymentReceived[_msgSender()] * SALE_PRICE_DECIMALS) / salePrice;
+        totalOwed[_msgSender()] = totalOwedInitial[_msgSender()];
 
         // increase total payment received amount
         totalPaymentReceived += paymentAmount;
@@ -454,11 +466,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         require(salePrice != 0, 'use withdrawGiveaway');
         // must be past end timestamp plus withdraw delay
         // must pass the first cliff date if there's a cliff period
-        require(
-            endTime + withdrawDelay < block.timestamp &&
-            (cliffPeriod.length == 0 || cliffPeriod[0].date < block.timestamp)
-            , 'cannot withdraw yet'
-        );
+        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        if (cliffPeriod.length != 0) {
+            require(cliffPeriod[0].claimTime < block.timestamp, 'cannot withdraw yet');
+        }
 
 
         // send token and update states
@@ -467,25 +478,27 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         require(tokenOwed != 0, 'already withdrawn');
     }   
 
-    function getCurrentClaimableToken(uint256 total) public view returns (uint256) {
+    function getCurrentClaimableToken() public view returns (uint256) {
         // linear vesting
-        if (vestingEndTime > block.timestamp) {
+        if (vestingEndTime > block.timestamp &&vestingEndTime > endTime + withdrawDelay) {
             // current claimable = (now - last claimed time) / (total vesting time) * totalClaimable
-            return total * (block.timestamp - latestClaimTime[_msgSender()]) / (vestingEndTime - (endTime + withdrawDelay));
+            return totalOwedInitial[_msgSender()] * (block.timestamp - Math.max(latestClaimTime[_msgSender()], endTime + withdrawDelay)) / (vestingEndTime - (endTime + withdrawDelay));
         }
         // cliff vesting
-        if (cliffPeriod.length != 0 && cliffPeriod[cliffPeriod.length - 1].date > block.timestamp) {
+        if (cliffPeriod.length != 0 && cliffPeriod[cliffPeriod.length - 1].claimTime > block.timestamp) {
             uint8 claimablePct = 0;
-            for (uint i = 0; i < cliffPeriod.length; i++) {
+            for (uint8 i = 0; i < cliffPeriod.length; i++) {
                 // if the cliff timestamp has been passed, add the claimable percentage
-                if (cliffPeriod[i].date < block.timestamp) { break; }
-                claimablePct += cliffPeriod[i].pct;
+                if (cliffPeriod[i].claimTime > block.timestamp) { break; }
+                if (latestClaimTime[_msgSender()] < cliffPeriod[i].claimTime) {
+                    claimablePct += cliffPeriod[i].pct;
+                }
             }
             // current claimable = total * claimiable percentage
-            return total * claimablePct / 100;
+            return totalOwedInitial[_msgSender()] * claimablePct / 100;
         }
         // users can get all of the tokens after vestingEndTime
-        return total;
+        return totalOwed[_msgSender()];
     }
 
     function getUserStakeValue(address user) public view returns (uint256) {
@@ -519,11 +532,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         );
         // must be past end timestamp plus withdraw delay
         // must pass the first cliff date if there's a cliff period
-        require(
-            endTime + withdrawDelay < block.timestamp &&
-            (cliffPeriod.length == 0 || cliffPeriod[0].date < block.timestamp)
-            , 'cannot withdraw yet'
-        );
+        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        if (cliffPeriod.length != 0) {
+            require(cliffPeriod[0].claimTime < block.timestamp, 'cannot withdraw yet');
+        }
 
         // initialize totalOwed before the first time of withdrawal
         if (!hasWithdrawn[_msgSender()]) {
@@ -535,6 +547,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
                 // if override, set the override amount
                 totalOwed[_msgSender()] = saleTokenAllocationOverride;
             }
+            totalOwedInitial[_msgSender()] = totalOwed[_msgSender()];
         }
 
         // send token and update states
@@ -606,19 +619,10 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             hasWithdrawn[_msgSender()] = true;
         }
 
-        // initialize latestClaimTime and update it if withdrawDelay is updated
-        if (latestClaimTime[_msgSender()] < endTime + withdrawDelay) {
-            latestClaimTime[_msgSender()] = endTime + withdrawDelay;
-        }
-        uint256 saleTokenOwed = getCurrentClaimableToken(totalOwed[_msgSender()]);
-
-        // sale token owed must be greater than 0
-        require(saleTokenOwed != 0, 'withdraw giveaway amount 0');
+        uint256 saleTokenOwed = getCurrentClaimableToken();
 
         // update totalOwed
         totalOwed[_msgSender()] -= saleTokenOwed;
-        // make sure user can't withdraw more than they owned
-        require(totalOwed[_msgSender()] >= 0, "withdraw amount exceed limit");
         // update last claimed time
         latestClaimTime[_msgSender()] = block.timestamp;
         // transfer giveaway sale token to participant
