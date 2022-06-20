@@ -285,7 +285,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
     // Function for owner to set a vesting end time
     function setVestingEndTime(uint256 _vestingEndTime) external onlyOwner {
-        require(_vestingEndTime > endTime + withdrawDelay, "Vesting end time has to be after withdrawal start time");
+        require(_vestingEndTime > endTime + withdrawDelay, "vesting end time has to be after withdrawal start time");
         vestingEndTime = _vestingEndTime;
 
         // emit
@@ -313,8 +313,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             totalPct += pct[i];
             cliffPeriod.push(Cliff(claimTimes[i], pct[i]));
         }
-        // require(totalPct < 100, "total input percentage must be smaller than 100");
-        // cliffPeriod[i + 1] = Cliff(endTime, 100 - totalPct);
+        require(totalPct == 100, "total input percentage doesn't equal to 100");
     }
 
     // Returns true if user is on whitelist, otherwise false
@@ -464,13 +463,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
         // must not be a zero price sale
         require(salePrice != 0, 'use withdrawGiveaway');
-        // must be past end timestamp plus withdraw delay
-        // must pass the first cliff date if there's a cliff period
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
-        if (cliffPeriod.length != 0) {
-            require(cliffPeriod[0].claimTime < block.timestamp, 'cannot withdraw yet');
-        }
-
 
         // send token and update states
         uint256 tokenOwed = sendSaleToken();
@@ -530,12 +522,6 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             whitelistRootHash == 0 || checkWhitelist(_msgSender(), merkleProof),
             'proof invalid'
         );
-        // must be past end timestamp plus withdraw delay
-        // must pass the first cliff date if there's a cliff period
-        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
-        if (cliffPeriod.length != 0) {
-            require(cliffPeriod[0].claimTime < block.timestamp, 'cannot withdraw yet');
-        }
 
         // initialize totalOwed before the first time of withdrawal
         if (!hasWithdrawn[_msgSender()]) {
@@ -612,6 +598,13 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
     }
 
     function sendSaleToken() internal returns (uint256) {
+        // must be past end timestamp plus withdraw delay
+        // must pass the first cliff date if there's a cliff period
+        require(endTime + withdrawDelay < block.timestamp, 'cannot withdraw yet');
+        if (cliffPeriod.length != 0) {
+            require(cliffPeriod[0].claimTime < block.timestamp, 'cannot withdraw yet');
+        }
+
         // increment withdrawer count
         if (!hasWithdrawn[_msgSender()]) {
             withdrawerCount += 1;
