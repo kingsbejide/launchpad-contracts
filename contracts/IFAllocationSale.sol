@@ -288,13 +288,19 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         require(_vestingEndTime > endTime + withdrawDelay, "vesting end time has to be after withdrawal start time");
         vestingEndTime = _vestingEndTime;
 
+        // unset cliff vesting
+        delete cliffPeriod;
+
         // emit
         emit SetVestingEndTime(_vestingEndTime);
     }
 
     function setCliffPeriod(uint256[] calldata claimTimes, uint8[] calldata pct) external onlyOwner {
-        // sale must not have started
-        require(block.timestamp < startTime, 'sale already started');
+        // claim must not have started
+        require(block.timestamp < endTime + withdrawDelay, "claim already started");
+        if (cliffPeriod.length > 0) {
+            require(block.timestamp < cliffPeriod[0].claimTime, "claim already started");
+        }
 
         // check if dates and pct can be mapped
         require(claimTimes.length == pct.length, "dates and pct doesn't match");
@@ -307,6 +313,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
         uint256 maxDate;
         uint8 totalPct;
         uint8 i = 0;
+        require(claimTimes[0] > endTime + withdrawDelay, "first claim time is before end time + withdraw delay");
         for (; i < claimTimes.length; i++) {
             require(maxDate < claimTimes[i], "dates not in ascending order");
             maxDate = claimTimes[i];
@@ -314,6 +321,9 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
             cliffPeriod.push(Cliff(claimTimes[i], pct[i]));
         }
         require(totalPct == 100, "total input percentage doesn't equal to 100");
+
+        // unset linear vesting
+        vestingEndTime = 0;
     }
 
     // Returns true if user is on whitelist, otherwise false
@@ -472,7 +482,7 @@ contract IFAllocationSale is Ownable, ReentrancyGuard {
 
     function getCurrentClaimableToken() public view returns (uint256) {
         // linear vesting
-        if (vestingEndTime > block.timestamp &&vestingEndTime > endTime + withdrawDelay) {
+        if (vestingEndTime > block.timestamp) {
             // current claimable = (now - last claimed time) / (total vesting time) * totalClaimable
             return totalOwedInitial[_msgSender()] * (block.timestamp - Math.max(latestClaimTime[_msgSender()], endTime + withdrawDelay)) / (vestingEndTime - (endTime + withdrawDelay));
         }
